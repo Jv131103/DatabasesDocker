@@ -26,12 +26,18 @@
 2. Instale via terminal:
 ```bash
 sudo dpkg -i dbeaver-ce_latest_amd64.deb
-# ou
+```
+
+ou
+
+```bash
 sudo rpm -ivh dbeaver-ce-latest-stable.x86_64.rpm
 ```
 
 # Conexão com os bancos do projeto
 
 . Host: 127.0.0.1
+
 . Porta: definida no .env
+
 . Usuário/Senha: conforme configuração do .env

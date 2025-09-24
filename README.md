@@ -14,10 +14,10 @@ A configuração usa **Docker Compose com profiles**, o que permite ligar apenas
 - [Comandos úteis](#comandos-úteis)
 - [Conexão com DBeaver (ou similar)](#conexão-com-dbeaver-ou-similar)
 - [Dicas rápidas](#dicas-rápidas)
-- [Próximos passos](#próximos-passos)
 
 ---
 
+<a id="pre-requisitos"></a>
 ## ✅ Pré-requisitos
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose v2](https://docs.docker.com/compose/install/)
@@ -25,6 +25,7 @@ A configuração usa **Docker Compose com profiles**, o que permite ligar apenas
 
 ---
 
+<a id="estrutura-do-projeto"></a>
 ## 📂 Estrutura do projeto
 ``` bash
 db-stack/
@@ -39,6 +40,7 @@ db-stack/
 
 ---
 
+<a id="configuracao-do-ambiente-env"></a>
 ## ⚙️ Configuração do ambiente (.env)
 
 Exemplo de `.env`:
@@ -70,6 +72,7 @@ POSTGRES_DB=appdb
 
 `⚠️ Importante: altere as senhas antes de usar em produção.`
 
+<a id="como-subir-um-banco"></a>
 ## 🚀 Como subir um banco
 
 ### ▶️ MariaDB
@@ -96,6 +99,7 @@ docker compose --profile postgres up -d
 `Conexão`:
 Host: 127.0.0.1 • Port: 5433 • DB: appdb • User: app • Pass: admin123
 
+<a id="persistencia-dos-dados"></a>
 # 💾 Persistência dos dados
 
 Os dados são mantidos em volumes nomeados:
@@ -115,6 +119,7 @@ docker compose down -v
 docker volume rm <nome_do_volume>
 ```
 
+<a id="comandos-uteis"></a>
 # 🛠️ Comandos úteis
 
 1. Ver containers ativos:
@@ -148,6 +153,7 @@ docker compose --profile mariadb down
 # (ou mysql / postgres)
 ```
 
+<a id="conexao-com-dbeaver-ou-similar"></a>
 # 🖥️ Conexão com DBeaver (ou similar)
 
 - Prefira sempre 127.0.0.1 em vez de localhost.
@@ -156,6 +162,7 @@ docker compose --profile mariadb down
 
 - [Guia de instalação do DBeaver](./INSTALLDBEAVER.md)
 
+<a id="dicas-rapidas"></a>
 # Dicas rápidas:
 . Se der erro de autenticação no MariaDB/MySQL, crie o usuário dentro do container:
 ```sql

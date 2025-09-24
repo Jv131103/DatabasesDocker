@@ -8,12 +8,12 @@ A configuração usa **Docker Compose com profiles**, o que permite ligar apenas
 ## 📑 Índice
 - [Pré-requisitos](#pré-requisitos)
 - [Estrutura do projeto](#estrutura-do-projeto)
-- [Configuração do ambiente (.env)](#configuração-do-ambiente-env)
+- [Configuração do ambiente (.env)](#configuracao-do-ambiente-env)
 - [Como subir um banco](#como-subir-um-banco)
-- [Persistência dos dados](#persistência-dos-dados)
-- [Comandos úteis](#comandos-úteis)
-- [Conexão com DBeaver (ou similar)](#conexão-com-dbeaver-ou-similar)
-- [Dicas rápidas](#dicas-rápidas)
+- [Persistência dos dados](#persistencia-dos-dados)
+- [Comandos úteis](#comandos-uteis)
+- [Conexão com DBeaver (ou similar)](#conexao-com-dbeaver-ou-similar)
+- [Dicas rápidas](#dicas-rapidas)
 
 ---
 

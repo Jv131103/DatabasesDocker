@@ -150,11 +150,11 @@ docker compose --profile mariadb down
 
 # 🖥️ Conexão com DBeaver (ou similar)
 
-    - Prefira sempre 127.0.0.1 em vez de localhost.
+- Prefira sempre 127.0.0.1 em vez de localhost.
 
-    - Portas e credenciais estão no .env.
- 
-    - [Guia de instalação do DBeaver](./INSTALLDBEAVER.md)
+- Portas e credenciais estão no .env.
+
+- [Guia de instalação do DBeaver](./INSTALLDBEAVER.md)
 
 # Dicas rápidas:
 . Se der erro de autenticação no MariaDB/MySQL, crie o usuário dentro do container:

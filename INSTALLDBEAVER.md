@@ -32,8 +32,6 @@ sudo rpm -ivh dbeaver-ce-latest-stable.x86_64.rpm
 
 # Conexão com os bancos do projeto
 
-    . Host: 127.0.0.1
-
-    . Porta: definida no .env
-
-    . Usuário/Senha: conforme configuração do .env
+. Host: 127.0.0.1
+. Porta: definida no .env
+. Usuário/Senha: conforme configuração do .env

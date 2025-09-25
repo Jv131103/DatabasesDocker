@@ -8,16 +8,17 @@ A configuração usa **Docker Compose com profiles**, o que permite ligar apenas
 ## 📑 Índice
 - [Pré-requisitos](#pré-requisitos)
 - [Estrutura do projeto](#estrutura-do-projeto)
-- [Configuração do ambiente (.env)](#configuracao-do-ambiente-env)
+- [Configuração do ambiente (.env)](#configuração-do-ambiente-env)
 - [Como subir um banco](#como-subir-um-banco)
-- [Persistência dos dados](#persistencia-dos-dados)
-- [Comandos úteis](#comandos-uteis)
-- [Conexão com DBeaver (ou similar)](#conexao-com-dbeaver-ou-similar)
-- [Dicas rápidas](#dicas-rapidas)
+- [Persistência dos dados](#persistência-dos-dados)
+- [Comandos úteis](#comandos-úteis)
+- [Conexão com DBeaver (ou similar)](#conexão-com-dbeaver-ou-similar)
+- [Dicas rápidas](#dicas-rápidas)
+- [Importante](#importante)
 
 ---
 
-<a id="pre-requisitos"></a>
+<a id="pré-requisitos"></a>
 ## ✅ Pré-requisitos
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose v2](https://docs.docker.com/compose/install/)
@@ -27,20 +28,19 @@ A configuração usa **Docker Compose com profiles**, o que permite ligar apenas
 
 <a id="estrutura-do-projeto"></a>
 ## 📂 Estrutura do projeto
-``` bash
+```bash
 db-stack/
 ┣ 📄 compose.yaml
-┗ 📄 .env
+┣ 📄 .env
 ┗ 📄 .env-example
 ```
 
-
 - **compose.yaml** → define os serviços (MariaDB, MySQL, PostgreSQL)  
-- **.env** → define as variáveis de ambiente (portas, usuário, senha, etc.)
+- **.env** → define variáveis de ambiente (portas, usuário, senha, etc.)
 
 ---
 
-<a id="configuracao-do-ambiente-env"></a>
+<a id="configuração-do-ambiente-env"></a>
 ## ⚙️ Configuração do ambiente (.env)
 
 Exemplo de `.env`:
@@ -70,109 +70,174 @@ POSTGRES_USER=app
 POSTGRES_DB=appdb
 ```
 
-`⚠️ Importante: altere as senhas antes de usar em produção.`
+⚠️ **Importante:** altere as senhas antes de usar em produção.
+
+---
 
 <a id="como-subir-um-banco"></a>
 ## 🚀 Como subir um banco
 
 ### ▶️ MariaDB
-``` bash
+```bash
 docker compose --profile mariadb up -d
 ```
 
-`Conexão no DBeaver`:
-Host: 127.0.0.1 • Port: 3308 • DB: appdb • User: app • Pass: app123
+Conectar no DBeaver:  
+- Host: 127.0.0.1  
+- Port: 3308  
+- DB: appdb  
+- User: app  
+- Pass: app123  
 
 ### ▶️ MySQL 8.4
 ```bash
 docker compose --profile mysql up -d
 ```
 
-`Conexão`:
-Host: 127.0.0.1 • Port: 3307 • DB: appdb • User: app • Pass: app123
+Conectar no DBeaver:  
+- Host: 127.0.0.1  
+- Port: 3307  
+- DB: appdb  
+- User: app  
+- Pass: app123  
 
 ### ▶️ PostgreSQL 16
 ```bash
 docker compose --profile postgres up -d
 ```
 
-`Conexão`:
-Host: 127.0.0.1 • Port: 5433 • DB: appdb • User: app • Pass: admin123
+Conectar no DBeaver:  
+- Host: 127.0.0.1  
+- Port: 5433  
+- DB: appdb  
+- User: app  
+- Pass: admin123  
 
-<a id="persistencia-dos-dados"></a>
-# 💾 Persistência dos dados
+---
 
-Os dados são mantidos em volumes nomeados:
+<a id="persistência-dos-dados"></a>
+## 💾 Persistência dos dados
 
-    - `MariaDB` → mariadb_data
-    
-    - `MySQL` → mysql_data
-    
-    - `PostgreSQL` → postgres_data
+Os dados ficam em volumes nomeados:
 
-Eles persistem mesmo após docker compose down.
+- MariaDB → `mariadb_data`  
+- MySQL → `mysql_data`  
+- PostgreSQL → `postgres_data`  
 
-Serão apagados apenas se rodar:
-``` bash
+Eles **persistem mesmo após `docker compose down`**.  
+Somente serão apagados se você rodar:
+```bash
 docker compose down -v
 # ou
 docker volume rm <nome_do_volume>
 ```
 
-<a id="comandos-uteis"></a>
-# 🛠️ Comandos úteis
+---
 
-1. Ver containers ativos:
+<a id="comandos-úteis"></a>
+## 🛠️ Comandos úteis
+
+- Ver status:
 ```bash
 docker container ls
-```
-
-2. Ver todos os containers (inclusive parados):
-```bash
 docker container ls -a
 ```
 
-3. Ver logs (útil até passar no healthcheck):
+- Logs (até passar no healthcheck):
 ```bash
 docker compose logs -f
 ```
 
-4. Entrar no shell do banco:
+- Acessar o shell do banco:
 ```bash
-# MariaDB/MySQL
+# MariaDB
 docker exec -it mariadb11 mariadb -u root -p
+
+# MySQL
 docker exec -it mysql84 mysql -u root -p
 
 # PostgreSQL
 docker exec -it postgres16 psql -U app -d appdb
 ```
 
-5. Parar o banco atual:
+- Parar o banco atual:
 ```bash
 docker compose --profile mariadb down
 # (ou mysql / postgres)
 ```
 
-<a id="conexao-com-dbeaver-ou-similar"></a>
-# 🖥️ Conexão com DBeaver (ou similar)
+- Parar todos os containers:
+```bash
+docker stop $(docker ps -aq)
+```
 
-- Prefira sempre 127.0.0.1 em vez de localhost.
+- Remover todos os containers:
+```bash
+docker rm $(docker ps -aq)
+```
 
-- Portas e credenciais estão no .env.
+- Remover volumes (⚠️ apaga bancos):
+```bash
+docker volume rm $(docker volume ls -q)
+```
 
-- [Guia de instalação do DBeaver](./INSTALLDBEAVER.md)
+- (Opcional) Remover imagens também:
+```bash
+docker rmi $(docker images -q)
+```
 
-<a id="dicas-rapidas"></a>
-# Dicas rápidas:
-. Se der erro de autenticação no MariaDB/MySQL, crie o usuário dentro do container:
+---
+
+<a id="conexão-com-dbeaver-ou-similar"></a>
+## 🖥️ Conexão com DBeaver (ou similar)
+
+- Prefira `127.0.0.1` em vez de `localhost`.  
+- Configure a conexão usando as variáveis do `.env`.
+
+**MySQL/MariaDB – Driver properties:**
+```txt
+allowPublicKeyRetrieval = true
+useSSL = false
+```
+
+- Guia de instalação do DBeaver: [INSTALLDBEAVER.md](./INSTALLDBEAVER.md)
+
+---
+
+<a id="dicas-rápidas"></a>
+## ⚡ Dicas rápidas
+
+- Se der erro de autenticação no MariaDB/MySQL, crie o usuário dentro do container:
 ```sql
 CREATE USER 'app'@'%' IDENTIFIED BY 'app123';
 GRANT ALL PRIVILEGES ON appdb.* TO 'app'@'%';
 FLUSH PRIVILEGES;
 ```
 
-. Para PostgreSQL, crie usuários adicionais com:
+- PostgreSQL: criar usuários/DBs adicionais:
 ```sql
 CREATE USER dev WITH PASSWORD 'dev123';
 CREATE DATABASE devdb OWNER dev;
+```
+
+---
+
+<a id="importante"></a>
+## 🚨 Importante
+
+- Sempre use:
+```bash
+docker stop <container_name>
+docker start <container_name>
+```
+
+- Se remover o container mas mantiver o volume:
+```bash
+docker rm <name_container>
+```
+➡️ Os dados permanecem no volume que gerou.  
+
+- Só perderá tudo se rodar:
+```bash
+docker compose down -v
 ```

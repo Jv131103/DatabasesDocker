@@ -171,6 +171,27 @@ Somente serão apagados se você rodar docker compose down -v (que remove volume
     docker compose --profile mariadb down
     # (ou mysql / postgres)
 
+
+. Parar todos os containers em execução
+
+    docker stop $(docker ps -aq)
+
+
+. Remover todos os containers
+
+    docker rm $(docker ps -aq)
+
+
+. Remover volumes associados (limpa os bancos)
+
+    ATENÇÃO: Isso apaga todos os dados dos volumes.
+
+    docker volume rm $(docker volume ls -q)
+
+. (Opcional) Remover imagens também
+
+    docker rmi $(docker images -q)
+
                                         
                                         Dicas rápidas no DBeaver
 
@@ -188,3 +209,24 @@ Somente serão apagados se você rodar docker compose down -v (que remove volume
 
     CREATE USER dev WITH PASSWORD 'dev123';
     CREATE DATABASE devdb OWNER dev;
+
+
+PS: Sempre desative ssl e habilite allowPublicKeyRetrieval, na área de driver properties do
+dbeaver ou de outra ferramenta que usar
+
+    allowPublicKeyRetrieval = true
+    useSSL = false
+
+                                    IMPORTANTE
+
+Sempre dê o docker stop, e dpois o run:
+
+    docker stop <name_container>
+
+    docker start <name_container>
+
+Se você remover o container mas mantiver o volume:
+
+    docker rm mysql84
+
+

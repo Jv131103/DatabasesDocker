@@ -11,3 +11,6 @@
 .env.test.local
 .env.production
 .env.development
+
+# Pasta estudos
+estudos_bancos_de_dados/

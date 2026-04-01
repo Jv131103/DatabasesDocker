@@ -1,6 +1,6 @@
 # DatabasesDocker
 
-Projeto para subir bancos de dados em **containers Docker** com **persistência de dados**, podendo escolher entre **MariaDB**, **MySQL** ou **PostgreSQL**.  
+Projeto para subir bancos de dados em **containers Docker** com **persistência de dados**, podendo escolher entre **MariaDB**, **MySQL**, **PostgreSQL** ou **OracleDB**.  
 A configuração usa **Docker Compose com profiles**, o que permite ligar apenas o banco que você precisar no momento.
 
 ---
@@ -68,6 +68,12 @@ POSTGRES_PORT=5433
 POSTGRES_PASSWORD=admin123
 POSTGRES_USER=app
 POSTGRES_DB=appdb
+
+# ----- Oracle -----
+ORACLE_PORT=1521
+ORACLE_PASSWORD=admin123
+ORACLE_APP_USER=app
+ORACLE_APP_PASSWORD=app123
 ```
 
 ⚠️ **Importante:** altere as senhas antes de usar em produção.
@@ -82,36 +88,44 @@ POSTGRES_DB=appdb
 docker compose --profile mariadb up -d
 ```
 
-Conectar no DBeaver:  
-- Host: 127.0.0.1  
-- Port: 3308  
-- DB: appdb  
-- User: app  
-- Pass: app123  
-
 ### ▶️ MySQL 8.4
 ```bash
 docker compose --profile mysql up -d
-```
-
-Conectar no DBeaver:  
-- Host: 127.0.0.1  
-- Port: 3307  
-- DB: appdb  
-- User: app  
-- Pass: app123  
+``` 
 
 ### ▶️ PostgreSQL 16
 ```bash
 docker compose --profile postgres up -d
 ```
 
-Conectar no DBeaver:  
-- Host: 127.0.0.1  
-- Port: 5433  
-- DB: appdb  
-- User: app  
-- Pass: admin123  
+### Oracle DB
+```bash
+docker compose --profile oracle up -d
+```
+
+## Conexão:
+### MariaDB / MySQL
+Host: 127.0.0.1
+Porta: conforme .env
+DB: appdb
+User: app
+
+### PostgreSQL
+Host: 127.0.0.1
+Porta: 5433
+DB: appdb
+User: app
+Pass: admin123
+
+### Oracle (diferente!)
+Host: 127.0.0.1
+Porta: 1521
+User: app
+Pass: app123
+Service Name: FREEPDB1
+
+- Oracle não usa "database" igual MySQL/Postgres
+- Ele usa Service Name + Schema (usuário)
 
 ---
 
@@ -122,7 +136,8 @@ Os dados ficam em volumes nomeados:
 
 - MariaDB → `mariadb_data`  
 - MySQL → `mysql_data`  
-- PostgreSQL → `postgres_data`  
+- PostgreSQL → `postgres_data`
+- OracleDB → `oracle_data`
 
 Eles **persistem mesmo após `docker compose down`**.  
 Somente serão apagados se você rodar:
@@ -158,6 +173,9 @@ docker exec -it mysql84 mysql -u root -p
 
 # PostgreSQL
 docker exec -it postgres16 psql -U app -d appdb
+
+# Oracle
+docker exec -it oracle-free sqlplus app/app123@//localhost:1521/FREEPDB1
 ```
 
 - Parar o banco atual:
@@ -218,6 +236,12 @@ FLUSH PRIVILEGES;
 ```sql
 CREATE USER dev WITH PASSWORD 'dev123';
 CREATE DATABASE devdb OWNER dev;
+```
+
+- OracleSQL: Oracle criar schema:
+```sql
+CREATE USER dev IDENTIFIED BY dev123;
+GRANT CONNECT, RESOURCE TO dev;
 ```
 
 ---

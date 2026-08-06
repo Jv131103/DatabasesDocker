@@ -458,7 +458,7 @@ useSSL = false
 Essas propriedades são explicadas detalhadamente em:
 
 ```text
-docs/dbeaver.md
+dbeaver.md
 ```
 
 ---
@@ -1425,7 +1425,7 @@ Normalmente relacionado a:
 Consulte:
 
 ```text
-docs/troubleshooting.md
+troubleshooting.md
 ```
 
 ---
@@ -1560,14 +1560,14 @@ Antes de utilizar um banco:
 
 # Documentos relacionados
 
-* [`installation.md`](./docs/installation.md) — instalação;
-* [`environment.md`](./docs/environment.md) — variáveis;
-* [`docker-compose.md`](./docs/docker-compose.md) — estrutura do Compose;
-* [`commands.md`](./docs/commands.md) — comandos;
-* [`dbeaver.md`](./docs/dbeaver.md) — clientes gráficos;
-* [`nosql.md`](./docs/nosql.md) — bancos não relacionais;
-* [`troubleshooting.md`](./docs/troubleshooting.md) — solução de erros;
-* [`faq.md`](./docs/faq.md) — perguntas frequentes;
+* [`installation.md`](./installation.md) — instalação;
+* [`environment.md`](./environment.md) — variáveis;
+* [`docker-compose.md`](./docker-compose.md) — estrutura do Compose;
+* [`commands.md`](./commands.md) — comandos;
+* [`dbeaver.md`](./dbeaver.md) — clientes gráficos;
+* [`nosql.md`](./nosql.md) — bancos não relacionais;
+* [`troubleshooting.md`](./troubleshooting.md) — solução de erros;
+* [`faq.md`](./faq.md) — perguntas frequentes;
 
 ---
 

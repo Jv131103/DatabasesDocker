@@ -2024,7 +2024,7 @@ Possíveis ferramentas:
 Consulte:
 
 ```text
-docs/dbeaver.md
+dbeaver.md
 ```
 
 ---
@@ -2503,14 +2503,14 @@ docker compose \
 
 # Documentos relacionados
 
-* [`installation.md`](./docs/installation.md) — instalação;
-* [`environment.md`](./docs/environment.md) — variáveis;
-* [`docker-compose.md`](./docs/docker-compose.md) — estrutura do Compose;
-* [`commands.md`](./docs/commands.md) — comandos;
-* [`dbeaver.md`](./docs/dbeaver.md) — clientes gráficos;
-* [`sql.md`](./docs/sql.md) — bancos relacionais;
-* [`troubleshooting.md`](./docs/troubleshooting.md) — solução de erros;
-* [`faq.md`](./docs/faq.md) — perguntas frequentes;
+* [`installation.md`](./installation.md) — instalação;
+* [`environment.md`](./environment.md) — variáveis;
+* [`docker-compose.md`](./docker-compose.md) — estrutura do Compose;
+* [`commands.md`](./commands.md) — comandos;
+* [`dbeaver.md`](./dbeaver.md) — clientes gráficos;
+* [`sql.md`](./sql.md) — bancos relacionais;
+* [`troubleshooting.md`](./troubleshooting.md) — solução de erros;
+* [`faq.md`](./faq.md) — perguntas frequentes;
 
 ---
 

@@ -2828,11 +2828,11 @@ A remoção de volumes deve ser sempre a última alternativa.
 
 # Documentos relacionados
 
-* [`installation.md`](./docs/installation.md) — instalação do ambiente;
-* [`environment.md`](./docs/environment.md) — variáveis do `.env`;
-* [`docker-compose.md`](./docs/docker-compose.md) — estrutura do Compose;
-* [`commands.md`](./docs/commands.md) — referência de comandos;
-* [`dbeaver.md`](./docs/dbeaver.md) — instalação e configuração do DBeaver;
-* [`sql.md`](./docs/sql.md) — bancos relacionais;
-* [`nosql.md`](./docs/nosql.md) — bancos não relacionais;
-* [`faq.md`](./docs/faq.md) — perguntas frequentes.
+* [`installation.md`](./installation.md) — instalação do ambiente;
+* [`environment.md`](./environment.md) — variáveis do `.env`;
+* [`docker-compose.md`](./docker-compose.md) — estrutura do Compose;
+* [`commands.md`](./commands.md) — referência de comandos;
+* [`dbeaver.md`](./dbeaver.md) — instalação e configuração do DBeaver;
+* [`sql.md`](./sql.md) — bancos relacionais;
+* [`nosql.md`](./nosql.md) — bancos não relacionais;
+* [`faq.md`](./faq.md) — perguntas frequentes.

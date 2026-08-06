@@ -1558,11 +1558,14 @@ Antes de utilizar um banco:
 
 # Documentos relacionados
 
+# Documentos relacionados
+
 * [`installation.md`](./docs/installation.md) — instalação;
-* [`environment.md`](./docs/environment.md) — variáveis de ambiente;
-* [`docker-compose.md`](./docs/docker-compose.md) — configuração do Compose;
+* [`environment.md`](./docs/environment.md) — variáveis;
+* [`docker-compose.md`](./docs/docker-compose.md) — estrutura do Compose;
 * [`commands.md`](./docs/commands.md) — comandos;
-* [`dbeaver.md`](./docs/dbeaver.md) — conexões gráficas;
+* [`dbeaver.md`](./docs/dbeaver.md) — clientes gráficos;
+* [`nosql.md`](./docs/nosql.md) — bancos não relacionais;
 * [`troubleshooting.md`](./docs/troubleshooting.md) — solução de erros;
 * [`faq.md`](./docs/faq.md) — perguntas frequentes;
 

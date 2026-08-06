@@ -78,6 +78,7 @@ Toda documentação detalhada encontra-se na pasta **docs**.
 | [`docs/troubleshooting.md`](./docs/troubleshooting.md) | Solução de erros |
 | [`docs/faq.md`](./docs/faq.md) | Perguntas frequentes |
 | [`docs/sql.md`](./docs/sql.md) | Bancos SQL, conexões, usuários, permissões e exemplos |
+| [`docs/nosql.md`](./docs/nosql.md) | Bancos NoSQL, conexões, usuários, permissões e exemplos |
 
 ---
 

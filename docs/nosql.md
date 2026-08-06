@@ -2,46 +2,90 @@
 
 ## Objetivo
 
-Este documento reúne as principais informações sobre os bancos NoSQL suportados pelo projeto **DatabasesDocker**.
+Este documento reúne todas as informações necessárias para utilizar os bancos de dados **NoSQL** disponibilizados pelo projeto **DatabasesDocker**.
 
-Atualmente, o ambiente contempla:
+Atualmente o ambiente fornece suporte para:
 
-* MongoDB;
-* Redis;
-* Cassandra.
+- MongoDB;
+- Redis;
+- Cassandra.
 
-Este guia explica:
+Ao final desta documentação você será capaz de:
 
-* o que são bancos NoSQL;
-* quando utilizar cada banco;
-* as diferenças entre MongoDB, Redis e Cassandra;
-* como iniciar e parar os serviços;
-* como acessar os bancos pelo terminal;
-* como testar o funcionamento;
-* como configurar portas, usuários e senhas;
-* como funciona a persistência;
-* como conectar aplicações;
-* quais cuidados devem ser tomados;
-* como diagnosticar problemas comuns.
+- entender o que é NoSQL;
+- conhecer as diferenças entre MongoDB, Redis e Cassandra;
+- saber quando utilizar cada banco;
+- iniciar apenas o banco desejado utilizando Docker Compose Profiles;
+- conectar aplicações aos bancos;
+- utilizar o terminal de cada banco;
+- compreender como funciona a persistência de dados;
+- validar a configuração do ambiente;
+- diagnosticar problemas comuns.
 
 ---
 
 # Bancos disponíveis
 
-| Banco     | Categoria                     | Porta interna | Profile ou serviço   | Container      |
-| --------- | ----------------------------- | ------------: | -------------------- | -------------- |
-| MongoDB   | Banco documental              |       `27017` | `mongo` ou `mongodb` | `mongo_db`     |
-| Redis     | Chave-valor em memória        |        `6379` | `redis`              | `redis_db`     |
-| Cassandra | Banco distribuído por colunas |        `9042` | `cassandra`          | `cassandra_db` |
+| Banco | Categoria | Porta Interna | Docker Compose Profile | Container |
+|--------|-----------|--------------:|------------------------|-----------|
+| MongoDB | Banco documental | `27017` | `mongo` | `mongo_db` |
+| Redis | Chave-valor em memória | `6379` | `redis` | `redis_db` |
+| Cassandra | Banco distribuído por colunas | `9042` | `cassandra` | `cassandra_db` |
 
-> [!NOTE]
-> Os nomes exatos dos services, profiles, containers, imagens e volumes devem ser confirmados no arquivo Compose real do projeto.
+---
+
+# Estrutura do projeto
+
+Todos os bancos do projeto são definidos em um único arquivo:
+
+```text
+docker-compose.yaml
+```
+
+Cada banco possui seu próprio **Docker Compose Profile**, permitindo iniciar apenas os serviços necessários.
+
+Profiles disponíveis:
+
+```text
+mariadb
+mysql
+postgres
+oracle
+mongo
+redis
+cassandra
+```
+
+Isso significa que você pode iniciar somente o banco que deseja utilizar, economizando memória e processamento.
+
+Exemplos:
+
+```bash
+docker compose --profile mongo up -d
+```
+
+```bash
+docker compose --profile redis up -d
+```
+
+```bash
+docker compose --profile cassandra up -d
+```
+
+Também é possível iniciar vários bancos simultaneamente:
+
+```bash
+docker compose \
+  --profile mongo \
+  --profile redis \
+  up -d
+```
 
 ---
 
 # O que é NoSQL?
 
-NoSQL significa, de forma geral:
+NoSQL significa:
 
 ```text
 Not Only SQL
@@ -50,58 +94,76 @@ Not Only SQL
 Em português:
 
 ```text
-Não apenas SQL
+Não Apenas SQL
 ```
 
-Esse termo representa bancos que não seguem obrigatoriamente o modelo tradicional de tabelas relacionais.
+O termo representa bancos de dados que não seguem obrigatoriamente o modelo relacional tradicional baseado em tabelas.
 
-Bancos NoSQL podem organizar dados como:
+Ao contrário dos bancos SQL, onde praticamente tudo é organizado em tabelas relacionadas entre si, bancos NoSQL podem armazenar informações em diversos formatos.
 
-* documentos;
-* pares de chave e valor;
-* famílias de colunas;
-* grafos;
-* séries temporais;
-* estruturas em memória.
+Os principais modelos existentes são:
 
-O NoSQL não substitui automaticamente um banco SQL.
+- documentos;
+- chave e valor;
+- famílias de colunas;
+- grafos;
+- séries temporais;
+- estruturas em memória.
 
-A escolha depende do problema que precisa ser resolvido.
+Cada modelo foi criado para resolver problemas específicos.
+
+Por esse motivo, NoSQL não substitui SQL.
+
+Na prática, ambos costumam trabalhar juntos dentro da mesma aplicação.
 
 ---
 
-# SQL e NoSQL
+# SQL x NoSQL
 
-## Banco relacional
+## Bancos SQL
 
-Um banco SQL normalmente organiza os dados em tabelas:
+Um banco relacional normalmente organiza os dados desta forma:
 
 ```text
 clientes
 ├── id
 ├── nome
 ├── email
-└── criado_em
+└── telefone
 ```
 
-Os relacionamentos são definidos por:
+Os relacionamentos acontecem através de:
 
-* chaves primárias;
-* chaves estrangeiras;
-* constraints;
-* joins.
+- Primary Keys;
+- Foreign Keys;
+- Constraints;
+- Joins;
+- Integridade referencial.
 
-## Banco NoSQL
+Exemplo:
 
-Um banco NoSQL pode organizar os mesmos dados de outra maneira.
+```sql
+SELECT *
+FROM clientes
+INNER JOIN pedidos
+ON pedidos.cliente_id = clientes.id;
+```
 
-Exemplo documental:
+---
+
+## Bancos NoSQL
+
+Já um banco documental pode armazenar toda a informação em um único documento.
+
+Exemplo:
 
 ```json
 {
-  "id": 1,
-  "nome": "Renato",
-  "email": "renato@email.com",
+  "nome": "Joao",
+  "email": "joao@email.com",
+  "telefones": [
+    "(11)99999-9999"
+  ],
   "enderecos": [
     {
       "cidade": "São Paulo",
@@ -111,277 +173,312 @@ Exemplo documental:
 }
 ```
 
-Nesse caso, informações relacionadas podem ser armazenadas dentro do mesmo documento.
+Nesse caso não existe necessidade de múltiplas tabelas.
+
+Toda a estrutura pode permanecer dentro do próprio documento.
 
 ---
 
-# Comparação geral
+# Quando utilizar NoSQL?
 
-| Característica          | MongoDB                | Redis                  | Cassandra                     |
-| ----------------------- | ---------------------- | ---------------------- | ----------------------------- |
-| Modelo                  | Documentos             | Chave-valor            | Colunas distribuídas          |
-| Armazenamento principal | Disco e memória        | Principalmente memória | Disco distribuído             |
-| Consulta                | MongoDB Query Language | Comandos Redis         | CQL                           |
-| Estrutura               | Flexível               | Chaves e estruturas    | Tabelas orientadas à consulta |
-| Uso comum               | APIs e documentos      | Cache e filas          | Grandes volumes distribuídos  |
-| Escalabilidade          | Horizontal             | Replicação e cluster   | Horizontal nativa             |
-| Velocidade              | Alta                   | Muito alta             | Alta em escala                |
-| Persistência            | Sim                    | Opcional/configurável  | Sim                           |
-| Porta padrão            | `27017`                | `6379`                 | `9042`                        |
+Cada banco foi criado para resolver um tipo específico de problema.
 
----
+Não existe um banco "melhor".
 
-# Quando utilizar cada banco?
+Existe o banco mais adequado para determinada necessidade.
 
-## Escolha MongoDB quando:
+## MongoDB
 
-* os dados possuem estrutura flexível;
-* os registros podem ter campos diferentes;
-* a aplicação trabalha naturalmente com JSON;
-* deseja armazenar documentos;
-* precisa evoluir o schema com flexibilidade;
-* trabalha com catálogos, conteúdos, eventos ou perfis;
-* quer integração simples com aplicações Node.js ou Python.
+Ideal para:
 
-## Escolha Redis quando:
-
-* precisa de cache;
-* precisa armazenar sessões;
-* precisa de respostas muito rápidas;
-* deseja implementar filas simples;
-* precisa contar acessos;
-* precisa controlar expiração;
-* deseja armazenar dados temporários;
-* precisa de pub/sub;
-* deseja diminuir consultas repetidas ao banco principal.
-
-## Escolha Cassandra quando:
-
-* precisa armazenar grandes volumes;
-* deseja distribuir dados entre nós;
-* precisa de alta disponibilidade;
-* possui muitas gravações;
-* trabalha com séries temporais ou eventos;
-* deseja tolerância a falhas;
-* possui consultas previsíveis e planejadas previamente.
+- APIs REST;
+- aplicações Web;
+- microsserviços;
+- documentos JSON;
+- catálogos;
+- CMS;
+- perfis de usuários;
+- aplicações com schema flexível.
 
 ---
 
-# Arquivo Compose NoSQL
+## Redis
 
-O ambiente NoSQL pode estar definido:
+Ideal para:
 
-* no mesmo `compose.yaml`;
-* em um arquivo separado;
-* em `docker-compose.yaml`;
-* em `compose-nosql.yaml`.
-
-Exemplo de execução com arquivo separado:
-
-```bash
-docker compose -f compose-nosql.yaml up -d
-```
-
-Exemplo utilizando um serviço específico:
-
-```bash
-docker compose -f compose-nosql.yaml up -d mongo
-```
-
-Exemplo utilizando profiles:
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  --profile mongo \
-  up -d
-```
-
-Use o comando correspondente à estrutura real do projeto.
+- cache;
+- sessões;
+- filas;
+- autenticação;
+- rate limiting;
+- rankings;
+- armazenamento temporário;
+- Pub/Sub.
 
 ---
 
-# Validando o arquivo Compose
+## Cassandra
 
-Antes de iniciar:
+Ideal para:
 
-```bash
-docker compose -f compose-nosql.yaml config
+- Big Data;
+- IoT;
+- Telemetria;
+- Eventos;
+- Logs;
+- Sistemas distribuídos;
+- Alta disponibilidade;
+- Grande volume de escrita.
+
+---
+
+# Comparação Geral
+
+| Característica | MongoDB | Redis | Cassandra |
+|----------------|----------|--------|-----------|
+| Modelo | Documentos | Chave-Valor | Colunas |
+| Persistência | Sim | Configurável | Sim |
+| Velocidade | Alta | Muito Alta | Alta |
+| Escalabilidade | Horizontal | Horizontal | Horizontal |
+| Estrutura | Flexível | Estruturas em memória | Orientado à consulta |
+| Melhor uso | Documentos | Cache | Grandes volumes |
+
+---
+
+# Docker Compose
+
+Todo o ambiente utiliza um único arquivo:
+
+```text
+docker-compose.yaml
 ```
 
-Caso o projeto utilize o arquivo principal:
+Antes de iniciar qualquer banco, recomenda-se validar o Compose.
 
 ```bash
 docker compose config
 ```
 
-Esse comando permite identificar:
+Esse comando verifica:
 
-* erro de YAML;
-* variáveis ausentes;
-* portas resolvidas;
-* volumes;
-* redes;
-* serviços;
-* profiles.
+- sintaxe YAML;
+- variáveis do `.env`;
+- profiles;
+- portas;
+- redes;
+- volumes;
+- containers.
+
+Caso exista algum erro de configuração, ele será apresentado antes da criação dos containers.
 
 ---
 
-# Configuração pelo `.env`
+# Docker Compose Profiles
 
-Exemplo conceitual:
+Todos os bancos deste projeto utilizam Docker Compose Profiles.
+
+Os Profiles disponíveis são:
+
+| Banco | Profile |
+|--------|---------|
+| MariaDB | mariadb |
+| MySQL | mysql |
+| PostgreSQL | postgres |
+| Oracle | oracle |
+| MongoDB | mongo |
+| Redis | redis |
+| Cassandra | cassandra |
+
+Exemplo iniciando somente MongoDB:
+
+```bash
+docker compose --profile mongo up -d
+```
+
+Somente Redis:
+
+```bash
+docker compose --profile redis up -d
+```
+
+Somente Cassandra:
+
+```bash
+docker compose --profile cassandra up -d
+```
+
+MongoDB e Redis:
+
+```bash
+docker compose \
+  --profile mongo \
+  --profile redis \
+  up -d
+```
+
+Todos os bancos:
+
+```bash
+docker compose --profile "*" up -d
+```
+
+---
+
+# Configuração pelo .env
+
+As portas, usuários e senhas são configuradas através do arquivo `.env`.
+
+Exemplo:
 
 ```ini
 TZ=America/Sao_Paulo
 
 # MongoDB
+MONGO_ROOT_USER=admin
+MONGO_ROOT_PASSWORD=admin123
+MONGO_DB=appdb
 MONGO_PORT=27017
-MONGO_INITDB_ROOT_USERNAME=admin
-MONGO_INITDB_ROOT_PASSWORD=admin123
-MONGO_INITDB_DATABASE=appdb
 
 # Redis
 REDIS_PORT=6379
-REDIS_PASSWORD=redis123
 
 # Cassandra
-CASSANDRA_PORT=9042
 CASSANDRA_CLUSTER_NAME=DatabasesDocker
-CASSANDRA_DC=datacenter1
-CASSANDRA_RACK=rack1
+CASSANDRA_PORT=9042
 ```
 
-> [!WARNING]
-> Os nomes das variáveis dependem do Compose real. Uma variável no `.env` só possui efeito se ela for utilizada no arquivo Compose ou no comando de inicialização do serviço.
+As variáveis somente terão efeito quando utilizadas pelo `docker-compose.yaml`.
 
 ---
 
-# Portas externas e internas
+# Portas
 
-Considere:
+Exemplo do MongoDB:
 
 ```yaml
 ports:
   - "${MONGO_PORT:-27017}:27017"
 ```
 
-Com:
+A porta da esquerda representa a porta da máquina.
 
-```ini
-MONGO_PORT=27018
-```
+A porta da direita representa a porta utilizada dentro do container.
 
-O fluxo será:
+Fluxo:
 
 ```text
 Aplicação
-   │
-   ▼
-127.0.0.1:27018
-   │
-   ▼
+
+      │
+
+      ▼
+
+127.0.0.1:27017
+
+      │
+
+      ▼
+
 Docker
-   │
-   ▼
-MongoDB no container:27017
+
+      │
+
+      ▼
+
+MongoDB:27017
 ```
 
-Portanto:
-
-* `27018` é a porta externa;
-* `27017` é a porta interna.
-
-Para uma aplicação executada na máquina:
+Quando outra aplicação estiver rodando dentro do Docker, utilize:
 
 ```text
-Host: 127.0.0.1
-Porta: 27018
+mongo:27017
 ```
 
-Para uma aplicação em outro container:
+Nunca:
 
 ```text
-Host: mongo
-Porta: 27017
+127.0.0.1
 ```
+
+pois dentro de um container `localhost` representa o próprio container.
 
 ---
 
 # MongoDB
 
-## Visão geral
+## O que é?
 
-MongoDB é um banco orientado a documentos.
+MongoDB é um banco de dados orientado a documentos.
 
-Os dados são armazenados em documentos semelhantes a JSON.
+Ele armazena informações utilizando documentos BSON (Binary JSON).
 
-Internamente, o MongoDB utiliza BSON, que permite tipos adicionais.
+Na prática, trabalha quase sempre com estruturas muito parecidas com JSON.
 
 Exemplo:
 
 ```javascript
 {
-  nome: "Renato",
-  idade: 22,
-  ativo: true,
-  cursos: ["Python", "Docker"],
-  endereco: {
-    cidade: "São Paulo",
-    estado: "SP"
-  }
+    nome: "Joao",
+    idade: 22,
+    ativo: true,
+
+    endereco: {
+        cidade: "São Paulo",
+        estado: "SP"
+    },
+
+    cursos: [
+        "Python",
+        "Docker",
+        "SQL"
+    ]
 }
 ```
+
+Ao contrário dos bancos relacionais, documentos diferentes podem possuir estruturas diferentes.
+
+Isso torna o MongoDB extremamente flexível.
 
 ---
 
 ## Principais conceitos
 
-| MongoDB           | Comparação aproximada com SQL |
-| ----------------- | ----------------------------- |
-| Database          | Database                      |
-| Collection        | Tabela                        |
-| Document          | Linha                         |
-| Field             | Coluna                        |
-| `_id`             | Chave primária                |
-| Embedded document | Estrutura relacionada interna |
-| Reference         | Referência a outro documento  |
+| MongoDB | Equivalente aproximado no SQL |
+|----------|------------------------------|
+| Database | Database |
+| Collection | Tabela |
+| Document | Linha |
+| Field | Coluna |
+| _id | Primary Key |
+| Embedded Document | Objeto relacionado |
+| Reference | Referência externa |
 
-A comparação é apenas conceitual. MongoDB e bancos relacionais funcionam de maneiras diferentes.
+> **Importante:** a comparação acima é apenas conceitual.
 
----
+MongoDB não funciona como um banco relacional.
 
-## Iniciar o MongoDB
+# Iniciando o MongoDB
 
-Caso use serviço diretamente:
-
-```bash
-docker compose -f compose-nosql.yaml up -d mongo
-```
-
-Caso use profile:
+Para iniciar somente o MongoDB:
 
 ```bash
-docker compose \
-  -f compose-nosql.yaml \
-  --profile mongo \
-  up -d
+docker compose --profile mongo up -d
 ```
 
-Ou, conforme o projeto:
+Verifique se o container foi iniciado:
 
 ```bash
-docker compose --profile mongodb up -d
+docker compose ps
 ```
 
----
+Saída esperada:
 
-## Verificar status
-
-```bash
-docker compose -f compose-nosql.yaml ps
+```text
+NAME         STATUS
+mongo_db     Up (healthy)
 ```
 
-Ou:
+Também é possível verificar utilizando o Docker:
 
 ```bash
 docker ps
@@ -389,12 +486,12 @@ docker ps
 
 ---
 
-## Acompanhar logs
+# Logs do MongoDB
+
+Para acompanhar os logs em tempo real:
 
 ```bash
-docker compose \
-  -f compose-nosql.yaml \
-  logs -f mongo
+docker compose logs -f mongo
 ```
 
 Ou:
@@ -403,58 +500,86 @@ Ou:
 docker logs -f mongo_db
 ```
 
+As últimas linhas do log:
+
+```bash
+docker logs --tail 100 mongo_db
+```
+
 ---
 
-## Acessar pelo terminal
+# Acessando o terminal
+
+Entre no Mongo Shell:
+
+```bash
+docker exec -it mongo_db mongosh
+```
+
+Caso exista autenticação:
 
 ```bash
 docker exec -it mongo_db \
-  mongosh \
-  -u admin \
-  -p admin123 \
-  --authenticationDatabase admin
+    mongosh \
+    --username admin \
+    --password admin123 \
+    --authenticationDatabase admin
 ```
 
-A senha deve ser a configurada no `.env`.
+> Utilize sempre as credenciais configuradas no arquivo `.env`.
 
 ---
 
-## String de conexão
+# String de conexão
 
-Exemplo local:
+Aplicações executadas na máquina:
 
 ```text
 mongodb://admin:admin123@127.0.0.1:27017/?authSource=admin
 ```
 
-Com banco definido:
+Especificando um banco:
 
 ```text
 mongodb://admin:admin123@127.0.0.1:27017/appdb?authSource=admin
 ```
 
-### Componentes
+Aplicações executadas em outro container:
+
+```text
+mongodb://admin:admin123@mongo:27017/appdb?authSource=admin
+```
+
+---
+
+# Estrutura da URI
 
 ```text
 mongodb://
 ```
 
-Protocolo utilizado.
+Protocolo.
 
 ```text
-admin:admin123
+admin:senha
 ```
 
 Usuário e senha.
 
 ```text
-127.0.0.1:27017
+mongo
 ```
 
-Host e porta.
+Nome do serviço Docker.
 
 ```text
-/appdb
+27017
+```
+
+Porta interna do container.
+
+```text
+appdb
 ```
 
 Banco padrão.
@@ -463,76 +588,95 @@ Banco padrão.
 authSource=admin
 ```
 
-Banco em que o usuário foi criado e será autenticado.
+Banco responsável pela autenticação.
 
 ---
 
-## Ver bancos
+# Databases
 
-Dentro do `mongosh`:
+Listar bancos:
 
 ```javascript
 show dbs
 ```
 
----
-
-## Selecionar ou criar um banco
+Selecionar um banco:
 
 ```javascript
 use appdb
 ```
 
-O banco poderá aparecer em `show dbs` somente depois que possuir dados.
+O MongoDB cria o banco automaticamente quando o primeiro documento é salvo.
 
 ---
 
-## Criar uma collection
+# Collections
+
+Criar:
 
 ```javascript
 db.createCollection("clientes")
 ```
 
-Listar collections:
+Listar:
 
 ```javascript
 show collections
 ```
 
----
-
-## Inserir documento
+Remover:
 
 ```javascript
-db.clientes.insertOne({
-  nome: "Renato",
-  email: "renato@email.com",
-  ativo: true
-})
+db.clientes.drop()
 ```
 
 ---
 
-## Inserir vários documentos
+# Inserindo documentos
+
+```javascript
+db.clientes.insertOne({
+
+    nome: "Joao",
+
+    email: "joao@email.com",
+
+    idade: 22,
+
+    ativo: true
+
+})
+```
+
+Inserindo vários:
 
 ```javascript
 db.clientes.insertMany([
-  {
-    nome: "Ana",
-    email: "ana@email.com",
-    ativo: true
-  },
-  {
-    nome: "João",
-    email: "joao@email.com",
-    ativo: false
-  }
+
+    {
+
+        nome: "Ana",
+
+        idade: 20
+
+    },
+
+    {
+
+        nome: "Carlos",
+
+        idade: 35
+
+    }
+
 ])
 ```
 
 ---
 
-## Consultar documentos
+# Consultas
+
+Todos os documentos:
 
 ```javascript
 db.clientes.find()
@@ -544,90 +688,347 @@ Formatado:
 db.clientes.find().pretty()
 ```
 
+Somente um:
+
+```javascript
+db.clientes.findOne()
+```
+
 Filtrar:
 
 ```javascript
 db.clientes.find({
-  ativo: true
+
+    ativo: true
+
 })
 ```
 
-Consultar um:
+Filtrar por idade:
 
 ```javascript
-db.clientes.findOne({
-  email: "renato@email.com"
+db.clientes.find({
+
+    idade: {
+
+        $gte: 18
+
+    }
+
 })
 ```
 
 ---
 
-## Atualizar documento
+# Ordenação
+
+Ascendente:
+
+```javascript
+db.clientes.find().sort({
+
+    nome: 1
+
+})
+```
+
+Descendente:
+
+```javascript
+db.clientes.find().sort({
+
+    idade: -1
+
+})
+```
+
+---
+
+# Limite
+
+Primeiros cinco:
+
+```javascript
+db.clientes.find().limit(5)
+```
+
+---
+
+# Atualização
 
 ```javascript
 db.clientes.updateOne(
-  {
-    email: "renato@email.com"
-  },
-  {
-    $set: {
-      nome: "Renato Justino"
+
+    {
+
+        email: "joao@email.com"
+
+    },
+
+    {
+
+        $set: {
+
+            nome: "Joao Vitor Justino"
+
+        }
+
     }
-  }
+
+)
+```
+
+Atualizar vários:
+
+```javascript
+db.clientes.updateMany(
+
+    {},
+
+    {
+
+        $set: {
+
+            ativo: true
+
+        }
+
+    }
+
 )
 ```
 
 ---
 
-## Remover documento
+# Removendo documentos
+
+Um documento:
 
 ```javascript
 db.clientes.deleteOne({
-  email: "renato@email.com"
+
+    email: "joao@email.com"
+
 })
+```
+
+Vários:
+
+```javascript
+db.clientes.deleteMany({
+
+    ativo: false
+
+})
+```
+
+Todos:
+
+```javascript
+db.clientes.deleteMany({})
 ```
 
 ---
 
-## Criar índice
+# Índices
+
+Criar índice:
+
+```javascript
+db.clientes.createIndex({
+
+    email: 1
+
+})
+```
+
+Índice único:
 
 ```javascript
 db.clientes.createIndex(
-  {
-    email: 1
-  },
-  {
-    unique: true
-  }
+
+    {
+
+        email: 1
+
+    },
+
+    {
+
+        unique: true
+
+    }
+
 )
 ```
 
-Listar índices:
+Consultar:
 
 ```javascript
 db.clientes.getIndexes()
 ```
 
----
-
-## Ver usuário autenticado
+Remover:
 
 ```javascript
-db.runCommand({
-  connectionStatus: 1
+db.clientes.dropIndex("email_1")
+```
+
+---
+
+# Operadores comuns
+
+Maior que:
+
+```javascript
+$gt
+```
+
+Maior ou igual:
+
+```javascript
+$gte
+```
+
+Menor:
+
+```javascript
+$lt
+```
+
+Menor ou igual:
+
+```javascript
+$lte
+```
+
+Diferente:
+
+```javascript
+$ne
+```
+
+Dentro de uma lista:
+
+```javascript
+$in
+```
+
+AND:
+
+```javascript
+$and
+```
+
+OR:
+
+```javascript
+$or
+```
+
+---
+
+# Exemplo completo
+
+```javascript
+db.clientes.find({
+
+    idade: {
+
+        $gte: 18
+
+    },
+
+    ativo: true
+
+}).sort({
+
+    nome: 1
+
 })
 ```
 
 ---
 
-## Teste rápido do MongoDB
+# Persistência
+
+Os dados ficam armazenados em:
+
+```text
+/data/db
+```
+
+No Compose:
+
+```yaml
+volumes:
+
+    - mongo_data:/data/db
+```
+
+O volume nomeado garante que os dados permaneçam após reiniciar o container.
+
+---
+
+# Testando a persistência
+
+Criar um documento:
+
+```javascript
+db.teste.insertOne({
+
+    mensagem: "Persistência funcionando"
+
+})
+```
+
+Pare o container:
+
+```bash
+docker compose stop mongo
+```
+
+Inicie novamente:
+
+```bash
+docker compose --profile mongo up -d
+```
+
+Verifique:
+
+```javascript
+db.teste.find()
+```
+
+O documento deverá continuar existindo.
+
+---
+
+# Verificando autenticação
+
+Consultar usuário autenticado:
+
+```javascript
+db.runCommand({
+
+    connectionStatus: 1
+
+})
+```
+
+---
+
+# Teste rápido
 
 ```javascript
 use appdb
 
 db.teste.insertOne({
-  nome: "Teste MongoDB",
-  criadoEm: new Date()
+
+    nome: "MongoDB",
+
+    criadoEm: new Date()
+
 })
 
 db.teste.find()
@@ -635,144 +1036,221 @@ db.teste.find()
 
 ---
 
-## Persistência do MongoDB
+# Problemas comuns
 
-O diretório de dados normalmente é:
+## Authentication Failed
+
+Verifique:
+
+- usuário;
+- senha;
+- authSource;
+- porta;
+- banco utilizado;
+- credenciais existentes no volume.
+
+---
+
+## Banco não aparece
+
+Um banco vazio normalmente não aparece em:
+
+```javascript
+show dbs
+```
+
+Insira um documento primeiro.
+
+---
+
+## Senha alterada no .env
+
+As variáveis
+
+```ini
+MONGO_ROOT_USER
+```
+
+e
+
+```ini
+MONGO_ROOT_PASSWORD
+```
+
+são utilizadas apenas durante a primeira inicialização do volume.
+
+Alterar o `.env` posteriormente não modifica usuários já existentes.
+
+---
+
+## Porta ocupada
+
+Sintoma:
 
 ```text
-/data/db
+Bind for 0.0.0.0:27017 failed
 ```
 
-Exemplo de volume:
+Altere:
 
-```yaml
-volumes:
-  - mongo_data:/data/db
+```ini
+MONGO_PORT=27018
 ```
 
-O volume deve ser declarado:
+Depois recrie o container:
 
-```yaml
-volumes:
-  mongo_data:
+```bash
+docker compose \
+    --profile mongo \
+    up -d \
+    --force-recreate
 ```
 
 ---
 
-## Problemas comuns do MongoDB
+## Container reiniciando
 
-### `Authentication failed`
+Verifique:
 
-Confira:
+```bash
+docker compose logs mongo
+```
 
-* usuário;
-* senha;
-* `authSource`;
-* porta;
-* banco de autenticação;
-* credenciais usadas na primeira criação do volume.
+e
 
-Exemplo:
+```bash
+docker inspect mongo_db
+```
+
+---
+
+## Healthcheck
+
+Consultar:
+
+```bash
+docker compose ps
+```
+
+ou
+
+```bash
+docker inspect \
+    --format='{{json .State.Health}}' \
+    mongo_db
+```
+
+Status esperado:
 
 ```text
-authSource=admin
+healthy
 ```
 
-### Banco não aparece em `show dbs`
+---
 
-O banco pode estar vazio.
+# Boas práticas
 
-Insira um documento:
-
-```javascript
-db.teste.insertOne({
-  teste: true
-})
-```
-
-### Senha do `.env` foi alterada, mas não funciona
-
-O usuário pode ter sido criado com a senha antiga no volume existente.
-
-Altere diretamente no MongoDB ou recrie o volume somente se os dados puderem ser apagados.
+- Utilize índices para consultas frequentes.
+- Evite documentos extremamente grandes.
+- Utilize Collections bem definidas.
+- Faça backup regularmente.
+- Não exponha o MongoDB diretamente na Internet.
+- Utilize autenticação.
+- Utilize volumes nomeados.
+- Evite utilizar a conta administrativa na aplicação.
+- Mantenha versões fixas da imagem Docker.
+- Monitore o crescimento das Collections.
+- Utilize o MongoDB Compass para inspeção visual dos dados.
 
 ---
 
 # Redis
 
-## Visão geral
+## O que é?
 
-Redis é um banco de dados baseado em chave e valor.
+Redis é um banco de dados **NoSQL** baseado em **chave e valor (Key-Value)**.
 
-Ele trabalha principalmente em memória e é conhecido por sua alta velocidade.
+Diferente da maioria dos bancos tradicionais, ele mantém os dados principalmente **em memória (RAM)**, tornando as operações extremamente rápidas.
+
+Em vez de tabelas ou documentos, tudo é armazenado utilizando uma chave que aponta para um valor.
 
 Exemplo:
 
 ```text
-nome → Renato
+nome -> Joao
+
+idade -> 22
+
+cidade -> São Paulo
 ```
 
-Uma chave identifica um valor.
+O Redis também suporta estruturas mais avançadas como:
 
-Redis também suporta estruturas como:
+- Strings;
+- Hashes;
+- Lists;
+- Sets;
+- Sorted Sets;
+- Streams;
+- Bitmaps;
+- HyperLogLog;
+- Dados Geoespaciais.
 
-* strings;
-* hashes;
-* lists;
-* sets;
-* sorted sets;
-* streams;
-* bitmaps;
-* dados geoespaciais.
+Por isso ele é muito utilizado como cache e armazenamento temporário de dados.
 
 ---
 
-## Usos comuns
+# Quando utilizar Redis?
 
-* cache;
-* sessões;
-* filas;
-* rankings;
-* contadores;
-* rate limiting;
-* pub/sub;
-* armazenamento temporário;
-* tokens com expiração;
-* processamento de eventos.
+Redis é indicado quando é necessário:
 
----
-
-## Iniciar Redis
-
-```bash
-docker compose -f compose-nosql.yaml up -d redis
-```
-
-Ou, com profile:
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  --profile redis \
-  up -d
-```
+- Cache de consultas;
+- Sessões de usuários;
+- Tokens JWT;
+- Filas simples;
+- Pub/Sub;
+- Rate Limiting;
+- Contadores;
+- Rankings;
+- Dados temporários;
+- Armazenamento extremamente rápido.
 
 ---
 
-## Verificar status
+# Iniciando o Redis
+
+Subir somente Redis:
 
 ```bash
-docker compose -f compose-nosql.yaml ps
+docker compose --profile redis up -d
+```
+
+Verificar:
+
+```bash
+docker compose ps
+```
+
+Saída esperada:
+
+```text
+NAME
+
+redis_db
+
+STATUS
+
+Up (healthy)
 ```
 
 ---
 
-## Ver logs
+# Logs
+
+Acompanhar os logs:
 
 ```bash
-docker compose \
-  -f compose-nosql.yaml \
-  logs -f redis
+docker compose logs -f redis
 ```
 
 Ou:
@@ -781,9 +1259,15 @@ Ou:
 docker logs -f redis_db
 ```
 
+Últimas linhas:
+
+```bash
+docker logs --tail 100 redis_db
+```
+
 ---
 
-## Acessar o Redis CLI
+# Acessando o Redis CLI
 
 Sem senha:
 
@@ -791,23 +1275,17 @@ Sem senha:
 docker exec -it redis_db redis-cli
 ```
 
-Com senha:
+Caso exista senha:
 
 ```bash
 docker exec -it redis_db \
-  redis-cli \
-  -a 'redis123'
-```
-
-Outra opção:
-
-```text
-AUTH redis123
+    redis-cli \
+    -a "redis123"
 ```
 
 ---
 
-## Testar conexão
+# Testando a conexão
 
 ```text
 PING
@@ -821,10 +1299,12 @@ PONG
 
 ---
 
-## Criar chave
+# Strings
+
+Criar:
 
 ```text
-SET nome Renato
+SET nome Joao
 ```
 
 Consultar:
@@ -833,11 +1313,29 @@ Consultar:
 GET nome
 ```
 
+Alterar:
+
+```text
+SET nome "Joao Vitor Justino"
+```
+
+Apagar:
+
+```text
+DEL nome
+```
+
+Verificar existência:
+
+```text
+EXISTS nome
+```
+
 ---
 
-## Expiração
+# Expiração
 
-Criar com expiração de 60 segundos:
+Criar chave válida por 60 segundos:
 
 ```text
 SET token abc123 EX 60
@@ -849,25 +1347,17 @@ Consultar tempo restante:
 TTL token
 ```
 
----
-
-## Remover chave
+Remover expiração:
 
 ```text
-DEL nome
+PERSIST token
 ```
 
 ---
 
-## Verificar existência
+# Contadores
 
-```text
-EXISTS nome
-```
-
----
-
-## Trabalhar com números
+Criar:
 
 ```text
 SET acessos 0
@@ -885,7 +1375,7 @@ Incrementar por valor:
 INCRBY acessos 10
 ```
 
-Diminuir:
+Decrementar:
 
 ```text
 DECR acessos
@@ -893,12 +1383,15 @@ DECR acessos
 
 ---
 
-## Hashes
+# Hashes
 
 Criar:
 
 ```text
-HSET usuario:1 nome Renato email renato@email.com
+HSET usuario:1 \
+    nome Joao \
+    email joao@email.com \
+    idade 22
 ```
 
 Consultar campo:
@@ -913,23 +1406,29 @@ Consultar todos:
 HGETALL usuario:1
 ```
 
+Listar somente as chaves:
+
+```text
+HKEYS usuario:1
+```
+
 ---
 
-## Lists
+# Lists
 
-Adicionar ao início:
+Adicionar no início:
 
 ```text
 LPUSH fila tarefa1
 ```
 
-Adicionar ao final:
+Adicionar no final:
 
 ```text
 RPUSH fila tarefa2
 ```
 
-Listar:
+Consultar:
 
 ```text
 LRANGE fila 0 -1
@@ -941,14 +1440,20 @@ Remover do início:
 LPOP fila
 ```
 
+Remover do final:
+
+```text
+RPOP fila
+```
+
 ---
 
-## Sets
+# Sets
 
 Adicionar:
 
 ```text
-SADD linguagens Python Java Docker
+SADD linguagens Python Docker Redis
 ```
 
 Consultar:
@@ -957,30 +1462,41 @@ Consultar:
 SMEMBERS linguagens
 ```
 
-Verificar membro:
+Verificar existência:
 
 ```text
 SISMEMBER linguagens Python
 ```
 
----
-
-## Sorted sets
-
-Adicionar pontuações:
+Remover:
 
 ```text
-ZADD ranking 100 Renato
+SREM linguagens Docker
+```
+
+---
+
+# Sorted Sets
+
+Criar ranking:
+
+```text
+ZADD ranking 100 Joao
+```
+
+Adicionar outro:
+
+```text
 ZADD ranking 80 Ana
 ```
 
-Consultar:
+Consultar crescente:
 
 ```text
 ZRANGE ranking 0 -1 WITHSCORES
 ```
 
-Em ordem decrescente:
+Consultar decrescente:
 
 ```text
 ZREVRANGE ranking 0 -1 WITHSCORES
@@ -988,9 +1504,9 @@ ZREVRANGE ranking 0 -1 WITHSCORES
 
 ---
 
-## Seleção de database lógico
+# Databases Lógicos
 
-Redis normalmente disponibiliza databases numerados.
+Redis possui databases numerados.
 
 Selecionar:
 
@@ -998,18 +1514,23 @@ Selecionar:
 SELECT 1
 ```
 
-Voltar ao padrão:
+Voltar:
 
 ```text
 SELECT 0
 ```
 
-> [!NOTE]
-> Esses databases são separações lógicas dentro da mesma instância, não equivalem aos databases tradicionais de MySQL ou PostgreSQL.
+Consultar database atual:
+
+```text
+CLIENT INFO
+```
 
 ---
 
-## Ver informações do servidor
+# Informações do servidor
+
+Informações gerais:
 
 ```text
 INFO
@@ -1035,107 +1556,80 @@ CLIENT LIST
 
 ---
 
-## Teste rápido do Redis
+# Teste rápido
 
 ```text
-SET nome Renato
+SET nome Joao
+
 GET nome
 
 SET contador 0
+
 INCR contador
+
 GET contador
 ```
 
 ---
 
-## Persistência no Redis
+# Persistência
 
-Redis pode operar com mecanismos como:
+Redis pode utilizar:
 
-* RDB;
-* AOF;
-* combinação de RDB e AOF;
-* sem persistência, dependendo da configuração.
+- RDB;
+- AOF;
+- RDB + AOF;
+- somente memória.
 
-### RDB
-
-Cria snapshots periódicos.
-
-### AOF
-
-Registra operações de escrita.
-
-### Volume
-
-O diretório comum de dados é:
+No projeto, os dados ficam em:
 
 ```text
 /data
 ```
 
-Exemplo:
+Volume:
 
 ```yaml
 volumes:
-  - redis_data:/data
-```
 
-> [!IMPORTANT]
-> Criar um volume não garante sozinho que o Redis esteja configurado para persistir todas as operações. A política de persistência precisa estar habilitada adequadamente no serviço.
+    - redis_data:/data
+```
 
 ---
 
-## Redis com senha
+# Verificando persistência
 
-Uma variável como:
-
-```ini
-REDIS_PASSWORD=redis123
-```
-
-não terá efeito automaticamente apenas por existir no `.env`.
-
-O serviço precisa utilizar a variável no comando.
-
-Exemplo conceitual:
-
-```yaml
-command:
-  - redis-server
-  - --requirepass
-  - ${REDIS_PASSWORD}
-```
-
-A forma real deve ser validada no Compose.
-
----
-
-## Cuidados com comandos Redis
-
-Evite em ambientes com dados importantes:
+Criar:
 
 ```text
-FLUSHDB
+SET teste funcionando
 ```
 
-Apaga o database lógico atual.
+Pare o container:
+
+```bash
+docker compose stop redis
+```
+
+Inicie novamente:
+
+```bash
+docker compose --profile redis up -d
+```
+
+Consulte:
 
 ```text
-FLUSHALL
+GET teste
 ```
 
-Apaga todos os databases lógicos da instância.
-
-> [!CAUTION]
-> Esses comandos podem apagar os dados imediatamente.
+Se a persistência estiver configurada corretamente, o valor continuará existindo.
 
 ---
 
-## Problemas comuns do Redis
+# Autenticação
 
-### `NOAUTH Authentication required`
-
-Autentique:
+Caso exista senha:
 
 ```text
 AUTH redis123
@@ -1145,59 +1639,245 @@ Ou:
 
 ```bash
 docker exec -it redis_db \
-  redis-cli \
-  -a 'redis123'
+    redis-cli \
+    -a "redis123"
 ```
 
-### Redis não exige senha mesmo com variável no `.env`
+---
 
-Verifique se `REDIS_PASSWORD` está sendo usada pelo comando do container.
+# Problemas comuns
 
-### Dados desapareceram após reiniciar
+## NOAUTH Authentication Required
 
-Confirme:
+Autentique:
 
-* volume montado;
-* RDB ou AOF;
-* diretório correto;
-* configuração de persistência;
-* logs do Redis.
+```text
+AUTH senha
+```
+
+---
+
+## Porta ocupada
+
+Erro:
+
+```text
+port is already allocated
+```
+
+Alterar:
+
+```ini
+REDIS_PORT=6380
+```
+
+Depois:
+
+```bash
+docker compose \
+    --profile redis \
+    up -d \
+    --force-recreate
+```
+
+---
+
+## Redis não pede senha
+
+Verifique se o Compose utiliza a variável:
+
+```ini
+REDIS_PASSWORD
+```
+
+Ela não possui efeito automaticamente apenas por existir no `.env`.
+
+---
+
+## Dados desapareceram
+
+Verifique:
+
+- volume montado;
+- persistência configurada;
+- utilização de `down -v`;
+- configuração RDB/AOF.
+
+---
+
+## Container reiniciando
+
+Consultar:
+
+```bash
+docker compose logs redis
+```
+
+ou
+
+```bash
+docker inspect redis_db
+```
+
+---
+
+# Healthcheck
+
+Consultar:
+
+```bash
+docker compose ps
+```
+
+ou
+
+```bash
+docker inspect \
+    --format='{{json .State.Health}}' \
+    redis_db
+```
+
+Status esperado:
+
+```text
+healthy
+```
+
+---
+
+# Cuidados
+
+Evite executar:
+
+```text
+FLUSHDB
+```
+
+Apaga todo o database atual.
+
+Também evite:
+
+```text
+FLUSHALL
+```
+
+Apaga todos os databases da instância.
+
+---
+
+# Persistência x Cache
+
+Nem todo dado deve ficar apenas no Redis.
+
+Utilize Redis para:
+
+- cache;
+- sessões;
+- tokens;
+- filas;
+- dados temporários.
+
+Dados permanentes devem permanecer em um banco persistente como PostgreSQL, MySQL ou MongoDB.
+
+---
+
+# Boas práticas
+
+- Utilize expiração sempre que possível.
+- Não utilize Redis como banco principal sem planejamento.
+- Configure autenticação.
+- Utilize volumes.
+- Monitore consumo de memória.
+- Utilize chaves padronizadas.
+- Evite valores gigantes.
+- Faça backup quando utilizar persistência.
+- Utilize nomes de chaves consistentes.
+- Monitore comandos lentos (`SLOWLOG`).
 
 ---
 
 # Cassandra
 
-## Visão geral
+## O que é?
 
-Apache Cassandra é um banco distribuído orientado a famílias de colunas.
+Apache Cassandra é um banco de dados **NoSQL distribuído**, orientado ao modelo de **famílias de colunas (Wide Column Store)**.
 
-Ele foi desenvolvido para:
+Foi desenvolvido para aplicações que precisam de:
 
-* alta disponibilidade;
-* escalabilidade horizontal;
-* grande volume de dados;
-* múltiplos nós;
-* tolerância a falhas;
-* altas taxas de escrita.
+- alta disponibilidade;
+- escalabilidade horizontal;
+- tolerância a falhas;
+- replicação entre nós;
+- milhares ou milhões de gravações por segundo;
+- grandes volumes de dados.
 
-O Cassandra é diferente de um banco relacional tradicional.
+Ao contrário de bancos relacionais, Cassandra foi projetado para que o banco nunca tenha um único ponto de falha.
 
-Mesmo utilizando uma linguagem parecida com SQL, o modelo precisa ser desenhado de acordo com as consultas.
+---
+
+# Quando utilizar Cassandra?
+
+Cassandra é indicado para:
+
+- IoT;
+- Telemetria;
+- Logs;
+- Eventos;
+- Big Data;
+- Sistemas Financeiros;
+- Monitoramento;
+- Redes Sociais;
+- Histórico de Eventos;
+- Sistemas distribuídos.
+
+Quando o principal requisito for:
+
+- disponibilidade;
+- escrita em larga escala;
+- replicação;
+- distribuição de dados.
+
+---
+
+# Como Cassandra funciona?
+
+Em Cassandra não existe um único servidor central.
+
+Os dados são distribuídos entre vários nós.
+
+Exemplo:
+
+```text
+                Cluster
+
+      ┌──────────┬──────────┬──────────┐
+
+      ▼          ▼          ▼
+
+    Node 1     Node 2     Node 3
+
+      │          │          │
+
+      └──── Dados Replicados ─────┘
+```
+
+Mesmo que um servidor fique indisponível, os demais continuam respondendo.
 
 ---
 
 # Principais conceitos
 
-| Cassandra         | Significado                             |
-| ----------------- | --------------------------------------- |
-| Cluster           | Conjunto de nós                         |
-| Node              | Instância do Cassandra                  |
-| Datacenter        | Agrupamento lógico ou físico de nós     |
-| Keyspace          | Espaço semelhante a um database         |
-| Table             | Estrutura de dados                      |
-| Partition key     | Define onde os dados ficam distribuídos |
-| Clustering column | Define organização dentro da partição   |
-| CQL               | Linguagem de consulta do Cassandra      |
+| Cassandra | Equivalente aproximado |
+|------------|-----------------------|
+| Cluster | Conjunto de servidores |
+| Node | Servidor |
+| Datacenter | Agrupamento de nós |
+| Keyspace | Database |
+| Table | Tabela |
+| Row | Registro |
+| Partition Key | Chave de distribuição |
+| Clustering Column | Ordenação interna |
+| CQL | Cassandra Query Language |
 
 ---
 
@@ -1209,52 +1889,50 @@ CQL significa:
 Cassandra Query Language
 ```
 
-A sintaxe lembra SQL, mas não possui o mesmo comportamento.
+Sua sintaxe lembra SQL.
 
 Exemplo:
 
 ```sql
 SELECT *
+
 FROM clientes;
 ```
 
-Apesar da aparência semelhante, Cassandra não deve ser modelado como um banco relacional.
+Entretanto, Cassandra não possui o mesmo funcionamento de um banco relacional.
 
 ---
 
-## Iniciar Cassandra
+# Iniciando Cassandra
 
 ```bash
-docker compose \
-  -f compose-nosql.yaml \
-  up -d cassandra
+docker compose --profile cassandra up -d
 ```
 
-Ou, com profile:
+Verificar:
 
 ```bash
-docker compose \
-  -f compose-nosql.yaml \
-  --profile cassandra \
-  up -d
+docker compose ps
+```
+
+Saída esperada:
+
+```text
+NAME
+
+cassandra_db
+
+STATUS
+
+Up (healthy)
 ```
 
 ---
 
-## Verificar status
+# Logs
 
 ```bash
-docker compose -f compose-nosql.yaml ps
-```
-
----
-
-## Acompanhar logs
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  logs -f cassandra
+docker compose logs -f cassandra
 ```
 
 Ou:
@@ -1263,65 +1941,77 @@ Ou:
 docker logs -f cassandra_db
 ```
 
-Cassandra pode levar mais tempo para inicializar do que MongoDB e Redis.
+Últimas linhas:
+
+```bash
+docker logs --tail 100 cassandra_db
+```
 
 ---
 
-## Recursos necessários
+# Tempo de inicialização
 
-Cassandra normalmente consome mais memória.
+Cassandra normalmente leva mais tempo para iniciar do que MongoDB e Redis.
 
-Antes de iniciar, verifique:
+Dependendo da máquina, pode levar alguns minutos até que o Healthcheck seja aprovado.
+
+---
+
+# Recursos necessários
+
+Antes de iniciar Cassandra, recomenda-se verificar os recursos disponíveis:
 
 ```bash
 docker stats
 ```
 
-Evite subir Cassandra, Oracle e vários outros bancos pesados ao mesmo tempo em máquinas com pouca memória.
+Em máquinas com pouca memória, evite iniciar simultaneamente:
+
+- Oracle;
+- Cassandra;
+- PostgreSQL;
+- outros bancos pesados.
 
 ---
 
-## Acessar o CQL Shell
+# Acessando o terminal
 
 ```bash
 docker exec -it cassandra_db cqlsh
 ```
 
-Com host e porta:
+Especificando host:
 
 ```bash
 docker exec -it cassandra_db \
-  cqlsh localhost 9042
+    cqlsh localhost 9042
 ```
 
 ---
 
-## Ver keyspaces
+# Keyspaces
+
+Listar:
 
 ```sql
 DESCRIBE KEYSPACES;
 ```
 
----
-
-## Criar keyspace
-
-Para ambiente local com um único nó:
+Criar:
 
 ```sql
 CREATE KEYSPACE appdb
+
 WITH replication = {
-  'class': 'SimpleStrategy',
-  'replication_factor': 1
+
+'class':'SimpleStrategy',
+
+'replication_factor':1
+
 };
 ```
 
-> [!WARNING]
-> `SimpleStrategy` é adequada apenas para exemplos e ambientes simples. Ambientes distribuídos reais devem utilizar uma estratégia apropriada ao datacenter.
-
----
-
-## Selecionar keyspace
+Selecionar:
 
 ```sql
 USE appdb;
@@ -1329,508 +2019,476 @@ USE appdb;
 
 ---
 
-## Criar tabela
+# Criando tabelas
 
 ```sql
-CREATE TABLE clientes_por_id (
-  id UUID PRIMARY KEY,
-  nome TEXT,
-  email TEXT,
-  criado_em TIMESTAMP
+CREATE TABLE clientes (
+
+id UUID PRIMARY KEY,
+
+nome TEXT,
+
+email TEXT,
+
+criado_em TIMESTAMP
+
 );
 ```
 
 ---
 
-## Inserir dados
+# Inserindo registros
 
 ```sql
-INSERT INTO clientes_por_id (
-  id,
-  nome,
-  email,
-  criado_em
+INSERT INTO clientes (
+
+id,
+
+nome,
+
+email,
+
+criado_em
+
 )
+
 VALUES (
-  uuid(),
-  'Renato',
-  'renato@email.com',
-  toTimestamp(now())
+
+uuid(),
+
+'Renato',
+
+'renato@email.com',
+
+toTimestamp(now())
+
 );
 ```
 
 ---
 
-## Consultar
+# Consultando
 
 ```sql
 SELECT *
-FROM clientes_por_id;
+
+FROM clientes;
+```
+
+Consultar um cliente:
+
+```sql
+SELECT *
+
+FROM clientes
+
+WHERE id = uuid();
 ```
 
 ---
 
-## Criar tabela orientada à consulta
+# Atualizando
 
-Em Cassandra, é comum criar uma tabela para uma consulta específica.
+```sql
+UPDATE clientes
+
+SET nome='Renato Justino'
+
+WHERE id=uuid();
+```
+
+---
+
+# Removendo
+
+```sql
+DELETE
+
+FROM clientes
+
+WHERE id=uuid();
+```
+
+---
+
+# Partition Key
+
+A Partition Key determina onde os dados serão armazenados.
+
+Ela influencia diretamente:
+
+- desempenho;
+- distribuição;
+- escalabilidade;
+- balanceamento dos nós.
+
+Escolher uma Partition Key inadequada pode gerar:
+
+- Hotspots;
+- baixa performance;
+- nós sobrecarregados.
+
+---
+
+# Clustering Columns
+
+As Clustering Columns organizam os dados dentro da mesma partição.
 
 Exemplo:
 
 ```sql
+PRIMARY KEY (
+
+usuario_id,
+
+data_evento
+
+)
+```
+
+Onde:
+
+```text
+usuario_id
+```
+
+é a Partition Key.
+
+Enquanto:
+
+```text
+data_evento
+```
+
+é a Clustering Column.
+
+---
+
+# Modelagem
+
+Em Cassandra não se modela pensando nas tabelas.
+
+Modela-se pensando nas consultas.
+
+Primeiro define-se:
+
+```text
+Quais consultas existirão?
+```
+
+Depois:
+
+```text
+Como armazenar os dados?
+```
+
+Esse conceito é diferente do modelo relacional.
+
+---
+
+# Exemplo
+
+Tabela para consultar clientes por e-mail:
+
+```sql
 CREATE TABLE clientes_por_email (
-  email TEXT PRIMARY KEY,
-  id UUID,
-  nome TEXT,
-  criado_em TIMESTAMP
+
+email TEXT PRIMARY KEY,
+
+nome TEXT,
+
+telefone TEXT
+
 );
+```
+
+Consulta:
+
+```sql
+SELECT *
+
+FROM clientes_por_email
+
+WHERE email='renato@email.com';
+```
+
+---
+
+# Persistência
+
+Os dados ficam armazenados em:
+
+```text
+/var/lib/cassandra
+```
+
+Volume:
+
+```yaml
+volumes:
+
+    - cassandra_data:/var/lib/cassandra
+```
+
+---
+
+# Testando persistência
+
+Criar tabela:
+
+```sql
+CREATE TABLE teste (
+
+id UUID PRIMARY KEY,
+
+mensagem TEXT
+
+);
+```
+
+Inserir:
+
+```sql
+INSERT INTO teste (
+
+id,
+
+mensagem
+
+)
+
+VALUES (
+
+uuid(),
+
+'Persistência OK'
+
+);
+```
+
+Parar:
+
+```bash
+docker compose stop cassandra
+```
+
+Iniciar:
+
+```bash
+docker compose --profile cassandra up -d
 ```
 
 Consultar:
 
 ```sql
 SELECT *
-FROM clientes_por_email
-WHERE email = 'renato@email.com';
+
+FROM teste;
 ```
 
 ---
 
-## Atualizar
+# Problemas comuns
 
-```sql
-UPDATE clientes_por_email
-SET nome = 'Renato Justino'
-WHERE email = 'renato@email.com';
-```
-
----
-
-## Excluir
-
-```sql
-DELETE FROM clientes_por_email
-WHERE email = 'renato@email.com';
-```
-
----
-
-## Partition key
-
-A partition key determina:
-
-* onde o dado será armazenado;
-* como os dados serão distribuídos;
-* quais consultas serão eficientes;
-* tamanho das partições;
-* capacidade de escalar.
-
-Uma escolha ruim pode causar:
-
-* partições muito grandes;
-* concentração de dados;
-* consultas lentas;
-* desequilíbrio entre nós.
-
----
-
-## Clustering columns
-
-Clustering columns organizam registros dentro de uma partição.
-
-Exemplo:
-
-```sql
-CREATE TABLE eventos_por_usuario (
-  usuario_id UUID,
-  criado_em TIMESTAMP,
-  evento TEXT,
-  PRIMARY KEY (
-    usuario_id,
-    criado_em
-  )
-) WITH CLUSTERING ORDER BY (
-  criado_em DESC
-);
-```
-
-Nesse exemplo:
-
-* `usuario_id` é a partition key;
-* `criado_em` é clustering column.
-
----
-
-## Diferenças importantes para SQL
-
-Cassandra não foi criado para:
-
-* joins tradicionais;
-* foreign keys;
-* consultas arbitrárias;
-* normalização relacional;
-* transações complexas entre muitas tabelas.
-
-A modelagem deve começar pelas consultas necessárias.
-
----
-
-## Persistência do Cassandra
-
-O Cassandra armazena dados em diretórios próprios da imagem.
-
-Exemplo conceitual:
-
-```yaml
-volumes:
-  - cassandra_data:/var/lib/cassandra
-```
-
-Confirme sempre o diretório correto da imagem utilizada.
-
----
-
-## Teste rápido do Cassandra
-
-```sql
-DESCRIBE KEYSPACES;
-
-CREATE KEYSPACE teste
-WITH replication = {
-  'class': 'SimpleStrategy',
-  'replication_factor': 1
-};
-
-USE teste;
-
-CREATE TABLE mensagens (
-  id UUID PRIMARY KEY,
-  texto TEXT
-);
-
-INSERT INTO mensagens (
-  id,
-  texto
-)
-VALUES (
-  uuid(),
-  'Cassandra funcionando'
-);
-
-SELECT *
-FROM mensagens;
-```
-
----
-
-## Problemas comuns do Cassandra
-
-### `Connection refused`
-
-O serviço pode ainda estar inicializando.
+## Connection Refused
 
 Verifique:
 
 ```bash
-docker logs -f cassandra_db
+docker compose logs cassandra
 ```
 
-### `NoHostAvailable`
+O serviço pode ainda estar iniciando.
+
+---
+
+## NoHostAvailable
 
 Possíveis causas:
 
-* Cassandra ainda não está pronto;
-* porta incorreta;
-* pouca memória;
-* container reiniciando;
-* configuração de cluster inválida.
+- pouca memória;
+- container reiniciando;
+- porta incorreta;
+- Healthcheck ainda não aprovado.
 
-### Container encerrado por falta de memória
+---
+
+## Cassandra muito lento
 
 Verifique:
 
 ```bash
-docker inspect cassandra_db
 docker stats
 ```
 
-Aumente os recursos do Docker ou reduza os serviços simultâneos.
-
----
-
-# Profiles e serviços
-
-Dependendo da configuração, o projeto pode usar:
-
-```yaml
-profiles:
-  - mongo
-```
-
-ou serviços sem profile:
-
-```yaml
-services:
-  mongo:
-```
-
-## Com profiles
+e
 
 ```bash
-docker compose \
-  --profile mongo \
-  up -d
-```
-
-## Sem profiles
-
-```bash
-docker compose up -d mongo
-```
-
-## Mais de um banco
-
-```bash
-docker compose \
-  --profile mongo \
-  --profile redis \
-  up -d
-```
-
-Ou:
-
-```bash
-docker compose up -d mongo redis
+docker compose logs cassandra
 ```
 
 ---
 
-# Iniciando todos os NoSQL
+## Container reiniciando
 
-Exemplo sem profiles:
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  up -d \
-  mongo \
-  redis \
-  cassandra
-```
-
-Com profiles:
+Consultar:
 
 ```bash
-docker compose \
-  -f compose-nosql.yaml \
-  --profile mongo \
-  --profile redis \
-  --profile cassandra \
-  up -d
-```
-
-> [!NOTE]
-> Cassandra possui consumo maior. Verifique memória disponível antes de iniciar tudo.
-
----
-
-# Parando os serviços
-
-## Parar sem remover
-
-MongoDB:
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  stop mongo
-```
-
-Redis:
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  stop redis
-```
-
-Cassandra:
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  stop cassandra
+docker inspect cassandra_db
 ```
 
 ---
 
-# Iniciando novamente
+## Porta ocupada
+
+Erro:
+
+```text
+port is already allocated
+```
+
+Altere:
+
+```ini
+CASSANDRA_PORT=9043
+```
+
+Depois:
 
 ```bash
 docker compose \
-  -f compose-nosql.yaml \
-  start mongo
+    --profile cassandra \
+    up -d \
+    --force-recreate
 ```
 
 ---
 
-# Removendo um container
+# Healthcheck
+
+Consultar:
 
 ```bash
-docker compose \
-  -f compose-nosql.yaml \
-  rm -f mongo
+docker compose ps
 ```
 
-Os dados devem permanecer se o volume nomeado não for removido.
+Detalhes:
+
+```bash
+docker inspect \
+    --format='{{json .State.Health}}' \
+    cassandra_db
+```
+
+Status esperado:
+
+```text
+healthy
+```
 
 ---
 
-# Derrubando o ambiente
+# Boas práticas
 
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  down
-```
-
-Esse comando normalmente remove:
-
-* containers;
-* rede do projeto.
-
-Os volumes nomeados permanecem.
-
----
-
-# Apagando dados
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  down -v
-```
-
-> [!CAUTION]
-> Esse comando remove os volumes associados ao projeto e pode apagar permanentemente MongoDB, Redis e Cassandra.
+- Modele pensando nas consultas.
+- Planeje corretamente a Partition Key.
+- Evite tabelas genéricas.
+- Não utilize JOINs.
+- Não espere comportamento igual ao SQL.
+- Utilize replicação adequada.
+- Faça backup regularmente.
+- Utilize volumes nomeados.
+- Aguarde completamente a inicialização antes de conectar aplicações.
+- Monitore consumo de memória.
+- Utilize versões fixas da imagem Docker.
 
 ---
 
 # Volumes
 
-Exemplo de volumes:
+Todos os bancos deste projeto utilizam **Docker Volumes Nomeados** para garantir a persistência dos dados.
 
-```yaml
-volumes:
-  mongo_data:
-  redis_data:
-  cassandra_data:
-```
+Volumes configurados:
 
-Montagens conceituais:
+| Banco | Volume |
+|--------|---------|
+| MongoDB | `mongo_data` |
+| Redis | `redis_data` |
+| Cassandra | `cassandra_data` |
 
-```yaml
-services:
-  mongo:
-    volumes:
-      - mongo_data:/data/db
-
-  redis:
-    volumes:
-      - redis_data:/data
-
-  cassandra:
-    volumes:
-      - cassandra_data:/var/lib/cassandra
-```
-
----
-
-# Verificando volumes
+Consultar volumes:
 
 ```bash
 docker volume ls
 ```
 
-Inspecionar:
+Inspecionar um volume:
 
 ```bash
-docker volume inspect <nome_do_volume>
+docker volume inspect mongo_data
 ```
 
-Identificar volumes montados em um container:
+Remover um volume:
 
 ```bash
-docker inspect <container>
+docker volume rm mongo_data
 ```
 
-Procure a seção:
-
-```text
-Mounts
-```
+> **Atenção:** somente remova um volume quando realmente desejar apagar todos os dados armazenados.
 
 ---
 
-# Inicialização com volume existente
+# Redes Docker
 
-Assim como ocorre com bancos SQL, as variáveis de criação inicial normalmente atuam apenas quando o diretório de dados está vazio.
+Todos os containers são conectados automaticamente à rede criada pelo Docker Compose.
 
-Alterar:
+Consultar redes:
 
-```ini
-MONGO_INITDB_ROOT_PASSWORD=nova_senha
+```bash
+docker network ls
 ```
 
-pode não mudar a senha do usuário existente em um volume já inicializado.
+Inspecionar a rede do projeto:
 
-O mesmo princípio pode afetar:
+```bash
+docker network inspect dev-databases_default
+```
 
-* usuários;
-* senhas;
-* bancos;
-* keyspaces;
-* configurações persistidas;
-* scripts de inicialização.
-
----
-
-# Redes
-
-O Compose cria uma rede padrão para os serviços.
-
-Dentro dessa rede, aplicações podem utilizar o nome do serviço.
+Dentro da rede Docker os serviços se comunicam pelo nome do serviço.
 
 Exemplos:
 
+MongoDB
+
 ```text
 mongo:27017
+```
+
+Redis
+
+```text
 redis:6379
+```
+
+Cassandra
+
+```text
 cassandra:9042
 ```
 
-Uma aplicação em outro container não deve utilizar:
+Não utilize:
 
 ```text
-127.0.0.1
+localhost
 ```
 
-para acessar esses serviços.
-
-Dentro do container, `127.0.0.1` aponta para o próprio container.
+quando outra aplicação estiver executando dentro de um container Docker.
 
 ---
 
-# Exemplos de conexão por aplicação
+# Conectando aplicações
 
 ## MongoDB
-
-Aplicação na máquina:
-
-```text
-mongodb://admin:senha@127.0.0.1:27017/appdb?authSource=admin
-```
-
-Aplicação em outro container:
 
 ```text
 mongodb://admin:senha@mongo:27017/appdb?authSource=admin
@@ -1840,20 +2498,6 @@ mongodb://admin:senha@mongo:27017/appdb?authSource=admin
 
 ## Redis
 
-Aplicação na máquina:
-
-```text
-redis://127.0.0.1:6379
-```
-
-Com senha:
-
-```text
-redis://:senha@127.0.0.1:6379
-```
-
-Aplicação em outro container:
-
 ```text
 redis://redis:6379
 ```
@@ -1862,17 +2506,9 @@ redis://redis:6379
 
 ## Cassandra
 
-Aplicação na máquina:
-
-```text
-Host: 127.0.0.1
-Porta: 9042
-```
-
-Aplicação em outro container:
-
 ```text
 Host: cassandra
+
 Porta: 9042
 ```
 
@@ -1880,624 +2516,361 @@ Porta: 9042
 
 # Healthchecks
 
-Um healthcheck verifica se o serviço está respondendo.
+Todos os bancos possuem Healthcheck configurado no `docker-compose.yaml`.
 
-## MongoDB
-
-Exemplo conceitual:
-
-```yaml
-healthcheck:
-  test:
-    [
-      "CMD",
-      "mongosh",
-      "--eval",
-      "db.adminCommand('ping')"
-    ]
-  interval: 10s
-  timeout: 5s
-  retries: 10
-  start_period: 20s
-```
-
-## Redis
-
-```yaml
-healthcheck:
-  test:
-    [
-      "CMD",
-      "redis-cli",
-      "ping"
-    ]
-  interval: 10s
-  timeout: 5s
-  retries: 10
-```
-
-Com senha, o comando precisa considerar a autenticação.
-
-## Cassandra
-
-O healthcheck deve aguardar o tempo maior de inicialização.
-
-Exemplo conceitual:
-
-```yaml
-healthcheck:
-  test:
-    [
-      "CMD-SHELL",
-      "cqlsh -e 'DESCRIBE KEYSPACES'"
-    ]
-  interval: 20s
-  timeout: 10s
-  retries: 15
-  start_period: 60s
-```
-
-> [!NOTE]
-> Os exemplos precisam ser adaptados à imagem, às credenciais e aos comandos disponíveis dentro de cada container.
-
----
-
-# Verificando saúde
+Consultar:
 
 ```bash
-docker compose -f compose-nosql.yaml ps
-```
-
-Detalhes:
-
-```bash
-docker inspect <container>
+docker compose ps
 ```
 
 Exemplo:
 
+```text
+NAME             STATUS
+
+mongo_db         Up (healthy)
+
+redis_db         Up (healthy)
+
+cassandra_db     Up (healthy)
+```
+
+Consultar detalhes:
+
+MongoDB
+
 ```bash
 docker inspect \
-  --format='{{json .State.Health}}' \
-  mongo_db
+    --format='{{json .State.Health}}' \
+    mongo_db
 ```
 
----
-
-# Logs
-
-## MongoDB
+Redis
 
 ```bash
-docker logs -f mongo_db
+docker inspect \
+    --format='{{json .State.Health}}' \
+    redis_db
 ```
 
-## Redis
+Cassandra
 
 ```bash
-docker logs -f redis_db
+docker inspect \
+    --format='{{json .State.Health}}' \
+    cassandra_db
 ```
-
-## Cassandra
-
-```bash
-docker logs -f cassandra_db
-```
-
-Últimas linhas:
-
-```bash
-docker logs --tail 200 <container>
-```
-
----
-
-# Interfaces gráficas
-
-## MongoDB
-
-Possíveis ferramentas:
-
-* MongoDB Compass;
-* Mongo Express;
-* DBeaver em edição compatível;
-* outras interfaces MongoDB.
-
-## Redis
-
-Possíveis ferramentas:
-
-* Redis Insight;
-* redis-cli;
-* DBeaver em edição compatível;
-* outras interfaces Redis.
-
-## Cassandra
-
-Possíveis ferramentas:
-
-* cqlsh;
-* ferramentas do ecossistema Cassandra;
-* DBeaver em edição compatível;
-* clientes específicos.
-
-Consulte:
-
-```text
-dbeaver.md
-```
-
----
-
-# Segurança
-
-## Nunca publique senhas reais
-
-O `.env` deve estar no `.gitignore`.
-
-Suba apenas:
-
-```text
-.env.example
-```
-
----
-
-## Não exponha os bancos na internet
-
-Evite publicar portas para todas as interfaces quando não for necessário.
-
-Exemplo mais restrito:
-
-```yaml
-ports:
-  - "127.0.0.1:${MONGO_PORT:-27017}:27017"
-```
-
-Isso limita o acesso à máquina local.
-
----
-
-## Use autenticação
-
-MongoDB e Redis não devem ficar expostos sem autenticação em redes não confiáveis.
-
-Cassandra também deve possuir configuração de segurança adequada quando utilizado fora do ambiente local.
-
----
-
-## Troque senhas de exemplo
-
-Não utilize em ambientes reais:
-
-```text
-admin123
-redis123
-app123
-```
-
----
-
-## Princípio do menor privilégio
-
-Evite utilizar usuários administradores nas aplicações.
-
-Crie usuários com acesso apenas ao necessário.
-
----
-
-## Criptografia
-
-Em conexões remotas ou de produção, avalie:
-
-* TLS;
-* certificados;
-* redes privadas;
-* VPN;
-* autenticação forte;
-* secrets;
-* firewall.
 
 ---
 
 # Backup
 
-Cada banco possui mecanismos próprios.
-
 ## MongoDB
 
-Ferramenta:
-
-```text
-mongodump
-```
-
-Restauração:
-
-```text
-mongorestore
-```
-
-Exemplo conceitual:
+Exportar:
 
 ```bash
 docker exec mongo_db \
-  mongodump \
-  --username admin \
-  --password admin123 \
-  --authenticationDatabase admin \
-  --out /backup
+mongodump \
+--out /tmp/backup
+```
+
+Importar:
+
+```bash
+docker exec mongo_db \
+mongorestore \
+/tmp/backup
 ```
 
 ---
 
 ## Redis
 
-O backup depende da configuração de persistência.
+Salvar snapshot:
 
-Possibilidades:
-
-* copiar snapshot RDB;
-* copiar AOF;
-* utilizar mecanismos gerenciados;
-* executar comandos de persistência;
-* parar com segurança antes de copiar arquivos, conforme o procedimento adotado.
+```bash
+docker exec redis_db \
+redis-cli SAVE
+```
 
 ---
 
 ## Cassandra
 
-Possibilidades:
+Criar snapshot:
 
-* snapshots;
-* ferramentas nativas;
-* cópia controlada;
-* estratégias específicas para cluster;
-* backup por nó;
-* ferramentas externas.
-
-Um backup Cassandra precisa considerar:
-
-* quantidade de nós;
-* replicação;
-* schema;
-* consistência;
-* restauração do cluster.
+```bash
+docker exec cassandra_db \
+nodetool snapshot
+```
 
 ---
 
-# Atualização de versões
+# Atualizando imagens
 
-Evite utilizar:
+Verificar imagens:
 
-```yaml
-image: mongo:latest
+```bash
+docker images
 ```
 
-```yaml
-image: redis:latest
+Baixar versões mais recentes:
+
+MongoDB
+
+```bash
+docker pull mongo:7
 ```
 
-```yaml
-image: cassandra:latest
+Redis
+
+```bash
+docker pull redis:7
 ```
 
-Prefira versões explícitas:
+Cassandra
 
-```yaml
-image: mongo:8
+```bash
+docker pull cassandra:4
 ```
 
-```yaml
-image: redis:8
+Depois recriar:
+
+```bash
+docker compose \
+    --profile mongo \
+    up -d \
+    --force-recreate
 ```
-
-```yaml
-image: cassandra:5
-```
-
-Os números acima são apenas exemplos. Use as versões definidas e testadas no projeto.
-
-Antes de atualizar:
-
-1. confirme a versão atual;
-2. leia as notas da versão;
-3. faça backup;
-4. teste a restauração;
-5. crie um ambiente paralelo;
-6. valide compatibilidade;
-7. atualize a documentação;
-8. mantenha o volume anterior até confirmar o novo ambiente.
 
 ---
 
-# Erros comuns
+# Reiniciando bancos
 
-## Porta já está ocupada
+MongoDB
 
-Sintoma:
+```bash
+docker compose restart mongo
+```
+
+Redis
+
+```bash
+docker compose restart redis
+```
+
+Cassandra
+
+```bash
+docker compose restart cassandra
+```
+
+---
+
+# Parando bancos
+
+MongoDB
+
+```bash
+docker compose stop mongo
+```
+
+Redis
+
+```bash
+docker compose stop redis
+```
+
+Cassandra
+
+```bash
+docker compose stop cassandra
+```
+
+---
+
+# Iniciando novamente
+
+MongoDB
+
+```bash
+docker compose start mongo
+```
+
+Redis
+
+```bash
+docker compose start redis
+```
+
+Cassandra
+
+```bash
+docker compose start cassandra
+```
+
+---
+
+# Removendo containers
+
+MongoDB
+
+```bash
+docker compose rm -f mongo
+```
+
+Redis
+
+```bash
+docker compose rm -f redis
+```
+
+Cassandra
+
+```bash
+docker compose rm -f cassandra
+```
+
+---
+
+# Derrubando o ambiente
+
+Todos os containers ativos:
+
+```bash
+docker compose down
+```
+
+Volumes permanecem preservados.
+
+---
+
+# Removendo também os volumes
+
+```bash
+docker compose down -v
+```
+
+⚠️ Esse comando remove todos os volumes do projeto e apaga permanentemente os dados armazenados.
+
+---
+
+# Checklist antes de utilizar
+
+- Docker instalado.
+- Docker Compose funcionando.
+- Arquivo `.env` configurado.
+- `docker-compose.yaml` válido.
+- Profile correto informado.
+- Container iniciado.
+- Healthcheck aprovado.
+- Porta disponível.
+- Volume criado.
+- Aplicação utilizando a porta correta.
+
+---
+
+# Fluxo de utilização
 
 ```text
-port is already allocated
-```
+Docker Compose
 
-Altere no `.env`:
+        │
 
-```ini
-MONGO_PORT=27018
-```
+        ▼
 
-Depois recrie o container:
+Docker Compose Profile
 
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  up -d \
-  --force-recreate \
-  mongo
-```
+        │
 
----
+        ▼
 
-## Container não inicia
+Container
 
-Verifique:
+        │
 
-```bash
-docker ps -a
-docker logs --tail 200 <container>
-```
+        ▼
 
-Possíveis causas:
+Healthcheck
 
-* variável ausente;
-* imagem incorreta;
-* pouca memória;
-* volume incompatível;
-* porta ocupada;
-* comando inválido;
-* permissão.
+        │
 
----
+        ▼
 
-## Aplicação não conecta
+Aplicação
 
-Confira:
+        │
 
-* host;
-* porta;
-* nome do serviço;
-* autenticação;
-* rede;
-* container saudável;
-* string de conexão;
-* porta externa ou interna.
+        ▼
 
----
-
-## Alteração do `.env` não funciona
-
-Recrie o container:
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  up -d \
-  --force-recreate
-```
-
-Credenciais persistidas podem precisar ser alteradas dentro do banco.
-
----
-
-## Dados desapareceram
-
-Verifique:
-
-```bash
-docker volume ls
-docker inspect <container>
-```
-
-Possíveis causas:
-
-* volume removido;
-* projeto Compose com outro nome;
-* serviço usando outro volume;
-* persistência Redis não configurada;
-* container iniciado sem montagem;
-* uso de `down -v`.
-
----
-
-## Cassandra muito lento
-
-Possíveis causas:
-
-* pouca memória;
-* poucos recursos no Docker;
-* primeira inicialização;
-* outros bancos pesados ativos;
-* disco lento;
-* healthcheck prematuro.
-
-Verifique:
-
-```bash
-docker stats
-docker logs -f cassandra_db
-```
-
----
-
-# Diagnóstico rápido
-
-Execute:
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  config
-```
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  ps
-```
-
-```bash
-docker ps -a
-```
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  logs --tail 200
-```
-
-Depois inspecione o serviço específico:
-
-```bash
-docker inspect <container>
+Persistência (Volume)
 ```
 
 ---
 
 # Comandos rápidos
 
-## Subir MongoDB
+## MongoDB
 
 ```bash
-docker compose \
-  -f compose-nosql.yaml \
-  up -d mongo
+docker compose --profile mongo up -d
+docker compose stop mongo
+docker compose start mongo
+docker compose restart mongo
+docker compose logs -f mongo
+docker exec -it mongo_db mongosh
 ```
-
-## Subir Redis
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  up -d redis
-```
-
-## Subir Cassandra
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  up -d cassandra
-```
-
-## Ver status
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  ps
-```
-
-## Ver logs
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  logs -f
-```
-
-## Parar MongoDB
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  stop mongo
-```
-
-## Derrubar tudo preservando volumes
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  down
-```
-
-## Derrubar e apagar os dados
-
-```bash
-docker compose \
-  -f compose-nosql.yaml \
-  down -v
-```
-
-> [!CAUTION]
-> O último comando apaga os volumes do ambiente.
 
 ---
 
-# Boas práticas
+## Redis
 
-* Nunca publique o `.env`.
-* Não utilize senhas de exemplo em ambientes reais.
-* Utilize volumes nomeados.
-* Confirme a persistência do Redis.
-* Aguarde Cassandra concluir a inicialização.
-* Utilize `authSource` corretamente no MongoDB.
-* Não use `localhost` entre containers.
-* Fixe versões das imagens.
-* Faça backup antes de atualizar.
-* Consulte logs antes de apagar containers.
-* Não remova volumes para resolver erros simples.
-* Utilize portas diferentes.
-* Monitore o consumo de memória.
-* Crie modelos de dados de acordo com o banco escolhido.
-* Não trate MongoDB ou Cassandra como um banco SQL.
-* Evite armazenar dados permanentes somente no cache Redis.
-* Teste restauração dos backups.
+```bash
+docker compose --profile redis up -d
+docker compose stop redis
+docker compose start redis
+docker compose restart redis
+docker compose logs -f redis
+docker exec -it redis_db redis-cli
+```
 
 ---
 
-# Checklist do MongoDB
+## Cassandra
 
-* [ ] Container está em execução.
-* [ ] Porta está correta.
-* [ ] Usuário e senha estão corretos.
-* [ ] `authSource=admin` foi configurado.
-* [ ] O volume está montado em `/data/db`.
-* [ ] A string de conexão está correta.
-* [ ] O banco possui ao menos um documento.
-* [ ] O usuário foi criado no banco esperado.
-* [ ] O healthcheck está aprovado.
-
----
-
-# Checklist do Redis
-
-* [ ] Container está em execução.
-* [ ] A porta está correta.
-* [ ] `PING` retorna `PONG`.
-* [ ] A senha é exigida, caso configurada.
-* [ ] A variável de senha está sendo usada no comando.
-* [ ] O volume está montado.
-* [ ] A persistência foi configurada.
-* [ ] A aplicação não depende do Redis como única fonte permanente sem planejamento.
-* [ ] Nenhum `FLUSHALL` foi executado acidentalmente.
+```bash
+docker compose --profile cassandra up -d
+docker compose stop cassandra
+docker compose start cassandra
+docker compose restart cassandra
+docker compose logs -f cassandra
+docker exec -it cassandra_db cqlsh
+```
 
 ---
 
-# Checklist do Cassandra
+# Resumo
 
-* [ ] Container está em execução.
-* [ ] Cassandra concluiu a inicialização.
-* [ ] A máquina possui memória suficiente.
-* [ ] A porta `9042` está acessível.
-* [ ] `cqlsh` conecta.
-* [ ] O keyspace existe.
-* [ ] A estratégia de replicação está adequada.
-* [ ] As tabelas foram modeladas de acordo com as consultas.
-* [ ] A partition key foi planejada.
-* [ ] O volume está montado.
-* [ ] O healthcheck possui tempo suficiente.
+Este documento apresentou os três bancos NoSQL disponíveis no projeto:
+
+- **MongoDB**, um banco orientado a documentos, ideal para aplicações com estrutura flexível e dados em formato JSON/BSON.
+- **Redis**, um banco chave-valor extremamente rápido, amplamente utilizado para cache, sessões, filas e armazenamento temporário.
+- **Cassandra**, um banco distribuído orientado a colunas, indicado para sistemas com grande volume de dados, alta disponibilidade e escalabilidade horizontal.
+
+Todos os bancos são gerenciados por um único `docker-compose.yaml`, utilizando **Docker Compose Profiles** para permitir a inicialização individual de cada serviço.
+
+Com esta documentação, você possui uma referência completa para:
+
+- iniciar e parar os bancos;
+- conectar aplicações;
+- acessar os terminais de cada banco;
+- executar operações básicas;
+- verificar logs e Healthchecks;
+- realizar backup;
+- solucionar problemas comuns;
+- compreender as características de cada tecnologia.
 
 ---
 
@@ -2508,60 +2881,7 @@ docker compose \
 * [`docker-compose.md`](./docker-compose.md) — estrutura do Compose;
 * [`commands.md`](./commands.md) — comandos;
 * [`dbeaver.md`](./dbeaver.md) — clientes gráficos;
-* [`sql.md`](./sql.md) — bancos relacionais;
+* [`nosql.md`](./nosql.md) — bancos não relacionais;
 * [`troubleshooting.md`](./troubleshooting.md) — solução de erros;
 * [`faq.md`](./faq.md) — perguntas frequentes;
 
----
-
-# Resumo
-
-Os bancos NoSQL do projeto possuem finalidades diferentes:
-
-```text
-MongoDB
-   └── documentos flexíveis
-
-Redis
-   └── cache, estruturas rápidas e dados temporários
-
-Cassandra
-   └── grande volume, distribuição e alta disponibilidade
-```
-
-O funcionamento geral é:
-
-```text
-.env
-   │
-   ▼
-Docker Compose
-   │
-   ▼
-Serviço ou profile
-   │
-   ▼
-Container NoSQL
-   │
-   ├── porta
-   ├── autenticação
-   ├── healthcheck
-   ├── rede
-   └── volume
-```
-
-Para aplicações na máquina local:
-
-```text
-Host: 127.0.0.1
-Porta: porta externa do .env
-```
-
-Para aplicações executadas em containers:
-
-```text
-Host: nome do serviço
-Porta: porta interna
-```
-
-MongoDB deve ser utilizado como banco documental, Redis como armazenamento rápido e Cassandra como banco distribuído orientado às consultas planejadas.

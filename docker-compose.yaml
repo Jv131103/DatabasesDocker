@@ -17,10 +17,19 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-u", "root", "-p${MARIADB_ROOT_PASSWORD}"]
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "ping",
+          "-u",
+          "root",
+          "-p${MARIADB_ROOT_PASSWORD}"
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
 
   mysql:
     image: mysql:8.4
@@ -34,14 +43,22 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: ${TZ}
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "${MYSQL_PORT:-3307}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-uroot",
+          "-p${MYSQL_ROOT_PASSWORD}"
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
 
   postgres:
     image: postgres:16
@@ -58,10 +75,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
 
   oracle:
     image: gvenzl/oracle-free:latest
@@ -82,45 +104,73 @@ services:
       interval: 20s
       timeout: 10s
       retries: 15
+      start_period: 60s
 
   # NoSQL
+
   mongo:
     image: mongo:7
     container_name: mongo_db
+    profiles: ["mongo"]
     restart: unless-stopped
-    ports:
-      - "${MONGO_PORT}:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: ${MONGO_DB}
+      TZ: ${TZ}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --username \"$${MONGO_INITDB_ROOT_USERNAME}\" --password \"$${MONGO_INITDB_ROOT_PASSWORD}\" --authenticationDatabase admin --eval \"db.adminCommand('ping').ok\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   redis:
     image: redis:7
     container_name: redis_db
+    profiles: ["redis"]
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT}:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   cassandra:
     image: cassandra:4
     container_name: cassandra_db
+    profiles: ["cassandra"]
     restart: unless-stopped
-    ports:
-      - "${CASSANDRA_PORT}:9042"
     environment:
       CASSANDRA_CLUSTER_NAME: ${CASSANDRA_CLUSTER_NAME}
+      TZ: ${TZ}
+    ports:
+      - "${CASSANDRA_PORT:-9042}:9042"
     volumes:
       - cassandra_data:/var/lib/cassandra
     healthcheck:
-      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      test:
+        [
+          "CMD-SHELL",
+          "cqlsh -e 'DESCRIBE KEYSPACES' || exit 1"
+        ]
       interval: 30s
       timeout: 10s
       retries: 10
+      start_period: 60s
 
 volumes:
   mariadb_data:
